@@ -19,7 +19,6 @@ class MotionController(QtCore.QObject):
     def __init__(self):
         super().__init__()
         # internal parameters
-        self.dll_path = 'C:/Program Files/Thorlabs/MCM3000 4.0/Application/ThorMCM3000.dll'
         self.model_controller = "Thorlabs_MCM3000"
         self.model_stage = 'ZFM2020'
         self.protocol = 'serial'
