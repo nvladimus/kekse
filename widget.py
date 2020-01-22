@@ -115,3 +115,6 @@ class widget(QWidget):
         self.inputs[title].clicked.connect(func)
         self.layouts[parent].addRow(self.inputs[title])
 
+    def update_numeric_field(self, title, value):
+        assert title in self.inputs, "Numeric field not found: " + title + "\n"
+        self.inputs[title].setValue(value)
