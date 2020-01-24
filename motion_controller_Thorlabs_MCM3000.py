@@ -70,6 +70,7 @@ class MotionController(QtCore.QObject):
                 print("Port already open: " + self.port + "\n")
         except Exception as e:
             print("Error:" + str(e) + "\n")
+        self.set_ini_position()
 
     def get_current_position(self, unit='count', echo=False):
         """Get the current reading of encoder position.
