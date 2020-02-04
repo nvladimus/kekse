@@ -50,7 +50,7 @@ class ETL_controller(QtCore.QObject):
         try:
             self.ser.open()
             if self.handshake() != b'Ready\r\n':
-                raise(serial.SerialException('Handshake failed'))
+                raise serial.SerialException('Handshake failed')
             else:
                 self._status = "Ready"
                 self.sig_update_gui.emit()
