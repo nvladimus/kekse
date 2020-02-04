@@ -39,7 +39,6 @@ class MotionController(QtCore.QObject):
 
     def set_stage_model(self, model):
         if model == 'ZFM2020':
-            print("Stage model: " + model + " \n")
             self.um_per_count = 0.21166666
             self.max_range_um = 25.4 * 1000
             self.position_encoder = self.encoder_offset = int(self.max_range_um / self.um_per_count)

@@ -118,3 +118,7 @@ class widget(QWidget):
     def update_numeric_field(self, title, value):
         assert title in self.inputs, "Numeric field not found: " + title + "\n"
         self.inputs[title].setValue(value)
+
+    def update_string_field(self, title, text):
+        assert title in self.inputs, "Text field not found: " + title + "\n"
+        self.inputs[title].setText(text)
