@@ -7,7 +7,6 @@ Design principles:
 * Device modules are independent from each other and self-contained, 
 similar to LabView virtual instruments. Each module can be run on it's own, 
 or envoked from a higher-level code (eg. from `gui_demo.py`)
-* GUI panel can be (optionally) launched when initializing a module.
 * GUI is minimal but extendable, abstracted via `widget.py` (PyQt5).
 
 ### Installation
