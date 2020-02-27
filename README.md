@@ -24,6 +24,6 @@ Once there, clone this repo and run
 This will launch all currenly available modules.
 To launch an individual module, run for example
 
-`python python stage_ASI_MS2000.py`
+`python stage_ASI_MS2000.py`
 
 In development...
