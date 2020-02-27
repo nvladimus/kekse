@@ -1,18 +1,22 @@
-# Plugin for motion controller Thorlabs MCM3000
-# communication via binary serial protocol (very primitive, you could do better, Thorlabs)
-# with GUI panel
-# Copyright Nikita Vladimirov, 2020
+"""
+Module for motion controller Thorlabs MCM3000
+Communication via binary serial protocol.
+To launch as a standalone app, run `python stage_ASI_MS2000.py`.
+To launch inside another program, see `gui_demo.py`
+Copyright Nikita Vladimirov, @nvladimus 2020
+"""
 import serial
 import struct
+import sys
 import widget as wd
-from PyQt5 import QtCore
+from PyQt5 import QtCore, QtWidgets
 from PyQt5.QtCore import pyqtSignal
 
 
 class MotionController(QtCore.QObject):
     """Basic class for motion controller.
     Currently only 1 model of stage implemented, with X-axis control (axis 0).
-    Note: Don't change the class name to keep uniform namespace in GUI constructor.
+    Note: Don't change the class name to keep uniform namespace between modules.
     """
     sig_update_gui = pyqtSignal()
 
@@ -33,9 +37,9 @@ class MotionController(QtCore.QObject):
         self.set_stage_model(self.model_stage)
         # GUI
         self.gui = wd.widget(self.model_controller)
-        self.__setup_gui()
+        self._setup_gui()
         # signals
-        self.sig_update_gui.connect(self.__update_gui)
+        self.sig_update_gui.connect(self._update_gui)
 
     def set_stage_model(self, model):
         if model == 'ZFM2020':
@@ -167,7 +171,7 @@ class MotionController(QtCore.QObject):
     def __counts2um(self, counts):
         return counts * self.um_per_count
 
-    def __setup_gui(self):
+    def _setup_gui(self):
         self.gui.add_groupbox('Position control')
         self.gui.add_string_field('Port',
                                   'Position control',
@@ -208,7 +212,7 @@ class MotionController(QtCore.QObject):
                             lambda: self.close())
 
     @QtCore.pyqtSlot()
-    def __update_gui(self):
+    def _update_gui(self):
         self.gui.update_numeric_field('Position, encoder', self.position_encoder)
         self.gui.update_numeric_field('Position, um', self.position_um)
 
@@ -219,3 +223,10 @@ class MotionController(QtCore.QObject):
                 print("Disconnected from " + self.port + "\n")
         except Exception as e:
             print("Error:" + str(e) + "\n")
+
+# run if the module is launched as a standalone program
+if __name__ == "__main__":
+    app = QtWidgets.QApplication(sys.argv)
+    dev = MotionController()
+    dev.gui.show()
+    app.exec_()

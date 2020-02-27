@@ -1,7 +1,9 @@
-from PyQt5.QtWidgets import (QCheckBox, QComboBox, QDateTimeEdit,
-        QDial, QDialog, QGridLayout, QGroupBox, QHBoxLayout, QLabel, QLineEdit,
-        QProgressBar, QPushButton, QRadioButton, QScrollBar, QSizePolicy,
-        QSlider, QSpinBox, QStyleFactory, QTableWidget, QTabWidget, QTextEdit,
+"""
+Interface for abstraction of several PyQt widgets, to speed up GUI development in new modules.
+Copyright Nikita Vladimirov, @nvladimus 2020
+"""
+
+from PyQt5.QtWidgets import (QGroupBox, QLineEdit, QPushButton, QTabWidget,
                              QVBoxLayout, QWidget, QDoubleSpinBox, QFormLayout)
 
 
