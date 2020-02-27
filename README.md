@@ -10,6 +10,20 @@ or envoked from a higher-level code (eg. from `gui_demo.py`)
 * GUI panel can be (optionally) launched when initializing a module.
 * GUI is minimal but extendable, abstracted via `widget.py` (PyQt5).
 
-In development...
+### Installation
+The code requires Python 3.6 and a few other libraries:
 
-Python 3.6
+`pip install PyQt5` 
+
+`pip install pyserial`
+ 
+Once there, clone this repo and run 
+
+`python gui_demo.py`
+
+This will launch all currenly available modules.
+To launch an individual module, run for example
+
+`python python stage_ASI_MS2000.py`
+
+In development...
