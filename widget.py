@@ -56,7 +56,7 @@ class widget(QWidget):
             self.containers[tabs[i]].setLayout(self.layouts[tabs[i]])
 
     def add_numeric_field(self, title, parent, value=0, vmin=0, vmax=100,
-                          enabled=True, decimals=1, func=None):
+                          enabled=True, decimals=1, func=None, **func_args):
         """Add a QDoubleSpinBox() widget to the parent container widget (groupbox or tab).
         Parameters
             :param title: str
@@ -67,6 +67,8 @@ class widget(QWidget):
                 Initial value of the field.
             :param func: function reference
                 Name of the function which must be called every time the value is changed.
+            :param: **func_args:
+                Function's additional key-value parameters (dictionary), besides the field value.
         """
         assert parent in self.layouts, "Parent container name not found: " + parent + "\n"
         assert title not in self.inputs, "Widget name already exists: " + title + "\n"
@@ -77,7 +79,7 @@ class widget(QWidget):
         self.inputs[title].setEnabled(enabled)
         self.layouts[parent].addRow(title, self.inputs[title])
         if enabled and func is not None:
-            self.inputs[title].valueChanged.connect(lambda: func(self.inputs[title].value()))
+            self.inputs[title].editingFinished.connect(lambda: func(self.inputs[title].value(), **func_args))
 
     def add_string_field(self, title, parent, value='', enabled=True, func=None):
         """ Add a QLineEdit() widget to the parent container widget (groupbox or tab).
@@ -99,7 +101,7 @@ class widget(QWidget):
         self.inputs[title].setEnabled(enabled)
         self.layouts[parent].addRow(title, self.inputs[title])
         if enabled and func is not None:
-            self.inputs[title].textChanged.connect(lambda: func(self.inputs[title].text()))
+            self.inputs[title].editingFinished.connect(lambda: func(self.inputs[title].text()))
 
     def add_button(self, title, parent, func):
         """Add a button to a parent container widget (groupbox or tab).

@@ -12,17 +12,22 @@ or envoked from a higher-level code (eg. from `gui_demo.py`)
 ### Installation
 The code requires Python 3.6 and a few other libraries:
 
-`pip install PyQt5` 
-
-`pip install pyserial`
+```
+pip install PyQt5 
+pip install pyserial
+```
  
 Once there, clone this repo and run 
 
-`python gui_demo.py`
+```
+python gui_demo.py
+```
 
 This will launch all currenly available modules.
 To launch an individual module, run for example
 
-`python stage_ASI_MS2000.py`
+```
+python stage_ASI_MS2000.py
+```
 
 In development...
