@@ -21,17 +21,25 @@ class widget(QWidget):
         self.layouts = {}
         self.layout_window = QVBoxLayout(self)
 
-    def add_groupbox(self, title='Group 1'):
-        """ Add groupbox widget.
+    def add_groupbox(self, title='Group 1', parent=None):
+        """ Add a groupbox widget.
         Parameters
         :param title: str
+        :param parent: str
+                Name of the existing parent container. If None (default), the widget is added directly
+                to the main window.
         """
         assert title not in self.containers, "Container name already exists"
         new_widget = QGroupBox(title)
         self.containers[title] = new_widget
         self.layouts[title] = QFormLayout()
         self.containers[title].setLayout(self.layouts[title])
-        self.layout_window.addWidget(new_widget)
+        if parent is None:
+            self.layout_window.addWidget(new_widget)
+        else:
+            assert parent in self.layouts, "Parent container name not found: " + parent + "\n"
+            assert title not in self.inputs, "Widget name already exists: " + title + "\n"
+            self.layouts[parent].addWidget(new_widget)
 
     def add_tabs(self, title, tabs=['Tab1', 'Tab2']):
         """Add tabs widget

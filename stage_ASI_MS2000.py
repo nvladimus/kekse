@@ -3,6 +3,7 @@ ASI XY stage interface for MS-2000 controller.
 To launch as a standalone app, run `python stage_ASI_MS2000.py`.
 To launch inside another program, see `gui_demo.py`
 Copyright Nikita Vladimirov @nvladimus 2020
+Todo: add output triggers
 """
 import serial
 import widget as wd
@@ -16,12 +17,13 @@ config = {'port': "COM18",
           'baud': 9600,
           'timeout_s': 2,
           'units_mm': 1e-4,
-          'speed_mm/s': 7.5}
+          'max_speed_mm/s': 7.5,
+          'encoder_step_mm': 1.0/45396}
 
 
 class MotionController(QtCore.QObject):
     """
-    Note: Don't change the class name to keep uniform namespace between modules.
+    All spatial units are mm.
     """
     sig_update_gui = pyqtSignal()
 
@@ -31,7 +33,12 @@ class MotionController(QtCore.QObject):
         self.baud = config['baud']
         self.timeout_s = config['timeout_s']
         self.units = config['units_mm']
-        self.speed_x = self.speed_y = config['speed_mm/s']
+        self.encoder_step_mm = config['encoder_step_mm']
+        self.speed_x = self.speed_y = config['max_speed_mm/s']
+        self.pulse_intervals_xy = [0.01, 0.01]
+        self.enc_counts_per_pulse_xy = [round(self.pulse_intervals_xy[0] / self.encoder_step_mm),
+                                        round(self.pulse_intervals_xy[1] / self.encoder_step_mm)]
+        self.scan_limits_xx_yy = [0, 0.1, 0, 0.1]  # [x_start, x_stop, y_start, y_stop]
         self._ser = None
         self.position_x_mm = self.position_y_mm = None
         self.target_pos_x_mm = self.target_pos_y_mm = 0
@@ -145,36 +152,133 @@ class MotionController(QtCore.QObject):
         self.logger.info(f"move complete")
         self.get_position()
 
+    def set_trigger_intervals(self, interval_mm, **kwargs):
+        if 'trigger_axis' in kwargs.keys():
+            trigger_axis = kwargs['trigger_axis']
+            if trigger_axis == 'X':
+                self.pulse_intervals_xy[0] = interval_mm
+                self.enc_counts_per_pulse_xy[0] = round(interval_mm / self.encoder_step_mm)
+            elif trigger_axis == 'Y':
+                self.pulse_intervals_xy[1] = interval_mm
+                self.enc_counts_per_pulse_xy[1] = round(interval_mm / self.encoder_step_mm)
+            else:
+                self.logger.error("set_scan_region(): value of /'trigger_axis/' is invalid.")
+            self._setup_scan()
+        else:
+            self.logger.error("set_trigger_intervals(): keyword /'trigger_axis/' is misssing.")
+
+    def set_scan_region(self, pos_mm, **kwargs):
+        # check which keyword is passed, and switch accordingly
+        if 'scan_boundary' in kwargs.keys():
+            boundary = kwargs['scan_boundary']
+            if boundary == 'x_start':
+                self.scan_limits_xx_yy[0] = pos_mm
+            elif boundary == 'x_stop':
+                self.scan_limits_xx_yy[1] = pos_mm
+            elif boundary == 'y_start':
+                self.scan_limits_xx_yy[2] = pos_mm
+            elif boundary == 'y_stop':
+                self.scan_limits_xx_yy[3] = pos_mm
+            else:
+                self.logger.error("set_scan_region(): value of /'scan_boundary/' is invalid.")
+            self._setup_scan()
+        else:
+            self.logger.error("set_scan_region(): keyword /'scan_boundary/' is misssing.")
+
+    def _setup_scan(self):
+        """Send the scan parameters to the stage"""
+        # set x-limits
+        command = f'SCANR X={self.scan_limits_xx_yy[0]} ' \
+                  f'Y={self.scan_limits_xx_yy[1]} ' \
+                  f'Z={self.enc_counts_per_pulse_xy[0]}'
+        _ = self.write_with_response(command.encode())
+        # set y-limits
+        command = f'SCANV X={self.scan_limits_xx_yy[2]} ' \
+                  f'Y={self.scan_limits_xx_yy[3]} ' \
+                  f'Z={self.enc_counts_per_pulse_xy[1]}'
+        _ = self.write_with_response(command.encode())
+        # set RASTER (0) or SERPENTINE (1) scan mode:
+        _ = self.write_with_response(b'SCAN F=1')
+        _ = self.write_with_response(b'TTL X=1')
+
+    def start_scan(self):
+        """Scan the stage with ENC_INT module.
+        Functions set_scan_region() and set_trigger_intervals() must be called before it
+        """
+        self.logger.info(f'scan limits: {self.scan_limits_xx_yy}')
+        self.logger.info(f'enc counts per pulse: {self.enc_counts_per_pulse_xy}')
+        response = self.write_with_response(b'SCAN')
+
+    def halt(self):
+        response = self.write_with_response(b'\\')
+        self.logger.info(f'halt() response: {response}')
+
     def _setup_gui(self):
-        parent_widget_name = 'XY control'
-        self.gui.add_groupbox(parent_widget_name)
-        self.gui.add_string_field('Port', parent_widget_name, value=self.port, func=self._set_port)
-        self.gui.add_numeric_field('Baud', parent_widget_name, value=self.baud, func=self._set_baud,
+        self.gui.add_tabs("Control Tabs", tabs=['Basic', 'Scan'])
+        tab_name = 'Basic'
+        groubox_name = 'Connection'
+        self.gui.add_groupbox(title=groubox_name, parent=tab_name)
+        # Connection controls
+        self.gui.add_string_field('Port', groubox_name, value=self.port, func=self._set_port)
+        self.gui.add_numeric_field('Baud', groubox_name, value=self.baud, func=self._set_baud,
                                    vmin=9600, vmax=115200, enabled=True, decimals=0)
-        self.gui.add_numeric_field('X pos., mm',  parent_widget_name,
+        self.gui.add_button('Connect', groubox_name,
+                            lambda: self.connect(self.port, self.baud, self.timeout_s))
+        self.gui.add_button('Disconnect', groubox_name,
+                            lambda: self.disconnect())
+        # Position/speed controls
+        groubox_name = 'Position'
+        self.gui.add_groupbox(title=groubox_name, parent=tab_name)
+        self.gui.add_numeric_field('X pos., mm',  groubox_name,
                                    value=-1, vmin=-1e6, vmax=1e6, enabled=False, decimals=5)
-        self.gui.add_numeric_field('Y pos., mm', parent_widget_name,
+        self.gui.add_numeric_field('Y pos., mm', groubox_name,
                                    value=-1, vmin=-1e6, vmax=1e6, enabled=False, decimals=5)
-        self.gui.add_numeric_field('Target X, mm', parent_widget_name,
+        self.gui.add_button('Update position', groubox_name,
+                            lambda: self.get_position())
+        # Absolute move
+        self.gui.add_numeric_field('Target X, mm', groubox_name,
                                    value=0, vmin=-25., vmax=25., decimals=5,
                                    enabled=True, func=self.set_target_x)
-        self.gui.add_numeric_field('Target Y, mm', parent_widget_name,
+        self.gui.add_numeric_field('Target Y, mm', groubox_name,
                                    value=0, vmin=-25., vmax=25., decimals=5,
                                    enabled=True, func=self.set_target_y)
-        self.gui.add_numeric_field('Speed X, mm/s', parent_widget_name,
+        self.gui.add_button('Move to target', groubox_name,
+                            lambda: self.move_abs((self.target_pos_x_mm, self.target_pos_y_mm)))
+        self.gui.add_button('STOP', groubox_name,
+                            lambda: self.halt())
+        # Speed
+        groubox_name = 'Speed'
+        self.gui.add_groupbox(title=groubox_name, parent=tab_name)
+        self.gui.add_numeric_field('Speed X, mm/s', groubox_name,
                                    value=self.speed_x, vmin=0, vmax=7.5, decimals=5,
                                    enabled=True, func=self.set_speed, **{'axis': 'X'})
-        self.gui.add_numeric_field('Speed Y, mm/s', parent_widget_name,
+        self.gui.add_numeric_field('Speed Y, mm/s', groubox_name,
                                    value=self.speed_y, vmin=0, vmax=7.5, decimals=5,
                                    enabled=True, func=self.set_speed, **{'axis': 'Y'})
-        self.gui.add_button('Connect', parent_widget_name,
-                            lambda: self.connect(self.port, self.baud, self.timeout_s))
-        self.gui.add_button('Update position', parent_widget_name,
-                            lambda: self.get_position())
-        self.gui.add_button('Move to target', parent_widget_name,
-                            lambda: self.move_abs((self.target_pos_x_mm, self.target_pos_y_mm)))
-        self.gui.add_button('Disconnect', parent_widget_name,
-                            lambda: self.disconnect())
+
+        tab_name = 'Scan'
+        groubox_name = 'Scan region'
+        self.gui.add_groupbox(title=groubox_name, parent=tab_name)
+        self.gui.add_numeric_field('X start, mm', groubox_name,
+                                   value=self.scan_limits_xx_yy[0], vmin=-25, vmax=25, decimals=4,
+                                   enabled=True, func=self.set_scan_region, **{'scan_boundary': 'x_start'})
+        self.gui.add_numeric_field('X stop, mm', groubox_name,
+                                   value=self.scan_limits_xx_yy[1], vmin=-25, vmax=25, decimals=4,
+                                   enabled=True, func=self.set_scan_region, **{'scan_boundary': 'x_stop'})
+        self.gui.add_numeric_field('Y start, mm', groubox_name,
+                                   value=self.scan_limits_xx_yy[2], vmin=-25, vmax=25, decimals=4,
+                                   enabled=True, func=self.set_scan_region, **{'scan_boundary': 'y_start'})
+        self.gui.add_numeric_field('Y stop, mm', groubox_name,
+                                   value=self.scan_limits_xx_yy[3], vmin=-25, vmax=25, decimals=4,
+                                   enabled=True, func=self.set_scan_region, **{'scan_boundary': 'y_stop'})
+        self.gui.add_numeric_field('Trigger interval X, mm', groubox_name,
+                                   value=self.pulse_intervals_xy[0], vmin=0, vmax=25, decimals=4,
+                                   enabled=True, func=self.set_trigger_intervals, **{'trigger_axis': 'X'})
+        self.gui.add_numeric_field('Trigger interval Y, mm', groubox_name,
+                                   value=self.pulse_intervals_xy[1], vmin=0, vmax=25, decimals=4,
+                                   enabled=True, func=self.set_trigger_intervals, **{'trigger_axis': 'Y'})
+        self.gui.add_button('Start scanning', groubox_name,
+                            lambda: self.start_scan())
 
     @QtCore.pyqtSlot()
     def _update_gui(self):
