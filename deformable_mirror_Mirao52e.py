@@ -36,8 +36,8 @@ class DmController(QtCore.QObject):
         self.dev_handle = None
         self.n_actuators = 52
         self.command = np.zeros(self.n_actuators)
-        self.status = ctypes.c_int64() # possibly c_int32() in some versions, Todo: test
-        self.trigger = ctypes.c_int64()
+        self._status = ctypes.c_int64()  # possibly c_int32() in some versions, Todo: test
+        self._trigger = ctypes.c_int64()
         self.logger_name = logger_name
         self.logger = logging.getLogger(logger_name)
         self.logger.setLevel(logging.DEBUG)
@@ -67,10 +67,12 @@ class DmController(QtCore.QObject):
         """Open deformable mirror session"""
         if self.dev_handle is not None:
             try:
-                self.dev_handle.mro_open(ctypes.byref(self.status))
+                self.dev_handle.mro_open(ctypes.byref(self._status))
             except:
                 pass
-            self.update_log(self.status.value)
+            self.update_log(self._status.value)
+            if self.gui_on:
+                self.sig_update_gui.emit()
         else:
             self.logger.error("DM device handle is empty, check DLL path.")
 
@@ -80,10 +82,12 @@ class DmController(QtCore.QObject):
         if self.dev_handle is not None:
             try:
                 self.dev_handle.mro_applySmoothCommand(self.cmd_flat.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
-                                               self.trigger, ctypes.byref(self.status))
+                                                       self._trigger, ctypes.byref(self._status))
             except:
                 pass
-            self.update_log(self.status.value)
+            self.update_log(self._status.value)
+            if self.gui_on:
+                self.sig_update_gui.emit()
         else:
             self.logger.error("DM is not initialized")
 
@@ -96,10 +100,12 @@ class DmController(QtCore.QObject):
         else:
             try:
                 self.dev_handle.mro_applySmoothCommand(command.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
-                                                       self.trigger, ctypes.byref(self.status))
+                                                       self._trigger, ctypes.byref(self._status))
             except:
                 pass
-            self.update_log(self.status.value)
+            self.update_log(self._status.value)
+            if self.gui_on:
+                self.sig_update_gui.emit()
 
     def read_npy_file(self, filepath=''):
         """Read command from .npy file and apply immediately.
@@ -121,10 +127,10 @@ class DmController(QtCore.QObject):
         self.dev_handle.mro_readCommandFile.argtypes = [ctypes.c_char_p, cmdType, ctypes.POINTER(ctypes.c_int64)]
         if os.path.exists(filepath) and filepath[-4:] == '.mro':
             try:
-                self.dev_handle.mro_readCommandFile(Cpath, cmd, ctypes.byref(self.status))
+                self.dev_handle.mro_readCommandFile(Cpath, cmd, ctypes.byref(self._status))
             except:
                 pass
-            self.update_log(self.status.value)
+            self.update_log(self._status.value)
         else:
             self.logger.error(f'MRO file {filepath} not found, or has invalid extension (must be .mro).')
         return np.asarray(cmd)
@@ -141,10 +147,12 @@ class DmController(QtCore.QObject):
             self.logger.error(f'DM was not initialized, cannot close.')
         else:
             try:
-                self.dev_handle.mro_close(ctypes.byref(self.status))
+                self.dev_handle.mro_close(ctypes.byref(self._status))
             except:
                 pass
-            self.update_log(self.status.value)
+            self.update_log(self._status.value)
+            if self.gui_on:
+                self.sig_update_gui.emit()
 
     def initialize_err_codes(self, errors):
         """Populate the errors dictionary with meaningful messages"""
@@ -204,6 +212,7 @@ class DmController(QtCore.QObject):
         self.gui.add_groupbox(title=groupbox_name, parent=tab_name)
         self.gui.add_button('Initialize', groupbox_name, lambda: self.initialize())
         self.gui.add_button('Disconnect', groupbox_name, lambda: self.disconnect())
+        self.gui.add_string_field('Status', groupbox_name, value=self.errors[self._status.value], enabled=False)
 
         groupbox_name = 'Commands'
         self.gui.add_groupbox(title=groupbox_name, parent=tab_name)
@@ -218,7 +227,8 @@ class DmController(QtCore.QObject):
 
     @QtCore.pyqtSlot()
     def _update_gui(self):
-        pass
+        self.gui.update_string_field('Status', self.errors[self._status.value].split()[0])
+
 
 # run if the module is launched as a standalone program
 if __name__ == "__main__":
