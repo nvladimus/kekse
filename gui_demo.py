@@ -7,17 +7,25 @@ from PyQt5 import QtWidgets
 import motion_controller_Thorlabs_MCM3000 as Controller
 import etl_controller_Optotune as Etl
 import stage_ASI_MS2000 as stage_ASI
+import deformable_mirror_Mirao52e as def_mirror
 
 if __name__ == '__main__':
     app = QtWidgets.QApplication(sys.argv)
-    # Thorlabs stage controller demo:
+
+    # Thorlabs stage controller:
     dev1 = Controller.MotionController()
     dev1.gui.show()
-    # Optotune ETL demo:
+
+    # Optotune ETL:
     dev2 = Etl.ETL_controller()
     dev2.gui.show()
+
     #ASI MS2000:
-    dev3 = stage_ASI.MotionController(dev_name="ASI MS2000")
+    dev3 = stage_ASI.MotionController()
     dev3.gui.show()
+
+    # DM Mirao52e:
+    dev4 = def_mirror.DmController()
+    dev4.gui.show()
 
     app.exec_()

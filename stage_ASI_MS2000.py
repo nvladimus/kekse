@@ -19,6 +19,7 @@ config = {'port': "COM18",
           'units_mm': 1e-4,
           'max_speed_mm/s': 7.5,
           'encoder_step_mm': 1.0/45396}
+logging.basicConfig()
 
 
 class MotionController(QtCore.QObject):
@@ -43,7 +44,6 @@ class MotionController(QtCore.QObject):
         self.position_x_mm = self.position_y_mm = None
         self.target_pos_x_mm = self.target_pos_y_mm = 0
         # logger setup
-        logging.basicConfig()
         self.logger_name = logger_name
         self.logger = logging.getLogger(logger_name)
         self.logger.setLevel(logging.DEBUG)
@@ -55,7 +55,7 @@ class MotionController(QtCore.QObject):
             self._setup_gui()
             self.sig_update_gui.connect(self._update_gui)
 
-    def connect(self, port, baud=9600, timeout_s=2):
+    def initialize(self, port, baud=9600, timeout_s=2):
         self.port = port
         self.baud = baud
         self.timeout_s = timeout_s
@@ -65,7 +65,7 @@ class MotionController(QtCore.QObject):
             self.get_position()
             self.get_speed()
         except Exception as e:
-            self.logger.error(f"Could not connect to stage: {e}")
+            self.logger.error(f"Could not initialize stage: {e}")
 
     def get_position(self):
         response = self.write_with_response(b'W X Y')
@@ -216,68 +216,68 @@ class MotionController(QtCore.QObject):
     def _setup_gui(self):
         self.gui.add_tabs("Control Tabs", tabs=['Basic', 'Scan'])
         tab_name = 'Basic'
-        groubox_name = 'Connection'
-        self.gui.add_groupbox(title=groubox_name, parent=tab_name)
+        groupbox_name = 'Connection'
+        self.gui.add_groupbox(title=groupbox_name, parent=tab_name)
         # Connection controls
-        self.gui.add_string_field('Port', groubox_name, value=self.port, func=self._set_port)
-        self.gui.add_numeric_field('Baud', groubox_name, value=self.baud, func=self._set_baud,
+        self.gui.add_string_field('Port', groupbox_name, value=self.port, func=self._set_port)
+        self.gui.add_numeric_field('Baud', groupbox_name, value=self.baud, func=self._set_baud,
                                    vmin=9600, vmax=115200, enabled=True, decimals=0)
-        self.gui.add_button('Connect', groubox_name,
-                            lambda: self.connect(self.port, self.baud, self.timeout_s))
-        self.gui.add_button('Disconnect', groubox_name,
+        self.gui.add_button('Connect', groupbox_name,
+                            lambda: self.initialize(self.port, self.baud, self.timeout_s))
+        self.gui.add_button('Disconnect', groupbox_name,
                             lambda: self.disconnect())
         # Position/speed controls
-        groubox_name = 'Position'
-        self.gui.add_groupbox(title=groubox_name, parent=tab_name)
-        self.gui.add_numeric_field('X pos., mm',  groubox_name,
+        groupbox_name = 'Position'
+        self.gui.add_groupbox(title=groupbox_name, parent=tab_name)
+        self.gui.add_numeric_field('X pos., mm',  groupbox_name,
                                    value=-1, vmin=-1e6, vmax=1e6, enabled=False, decimals=5)
-        self.gui.add_numeric_field('Y pos., mm', groubox_name,
+        self.gui.add_numeric_field('Y pos., mm', groupbox_name,
                                    value=-1, vmin=-1e6, vmax=1e6, enabled=False, decimals=5)
-        self.gui.add_button('Update position', groubox_name,
+        self.gui.add_button('Update position', groupbox_name,
                             lambda: self.get_position())
         # Absolute move
-        self.gui.add_numeric_field('Target X, mm', groubox_name,
+        self.gui.add_numeric_field('Target X, mm', groupbox_name,
                                    value=0, vmin=-25., vmax=25., decimals=5,
                                    enabled=True, func=self.set_target_x)
-        self.gui.add_numeric_field('Target Y, mm', groubox_name,
+        self.gui.add_numeric_field('Target Y, mm', groupbox_name,
                                    value=0, vmin=-25., vmax=25., decimals=5,
                                    enabled=True, func=self.set_target_y)
-        self.gui.add_button('Move to target', groubox_name,
+        self.gui.add_button('Move to target', groupbox_name,
                             lambda: self.move_abs((self.target_pos_x_mm, self.target_pos_y_mm)))
-        self.gui.add_button('STOP', groubox_name,
+        self.gui.add_button('STOP', groupbox_name,
                             lambda: self.halt())
         # Speed
-        groubox_name = 'Speed'
-        self.gui.add_groupbox(title=groubox_name, parent=tab_name)
-        self.gui.add_numeric_field('Speed X, mm/s', groubox_name,
+        groupbox_name = 'Speed'
+        self.gui.add_groupbox(title=groupbox_name, parent=tab_name)
+        self.gui.add_numeric_field('Speed X, mm/s', groupbox_name,
                                    value=self.speed_x, vmin=0, vmax=7.5, decimals=5,
                                    enabled=True, func=self.set_speed, **{'axis': 'X'})
-        self.gui.add_numeric_field('Speed Y, mm/s', groubox_name,
+        self.gui.add_numeric_field('Speed Y, mm/s', groupbox_name,
                                    value=self.speed_y, vmin=0, vmax=7.5, decimals=5,
                                    enabled=True, func=self.set_speed, **{'axis': 'Y'})
 
         tab_name = 'Scan'
-        groubox_name = 'Scan region'
-        self.gui.add_groupbox(title=groubox_name, parent=tab_name)
-        self.gui.add_numeric_field('X start, mm', groubox_name,
+        groupbox_name = 'Scan region'
+        self.gui.add_groupbox(title=groupbox_name, parent=tab_name)
+        self.gui.add_numeric_field('X start, mm', groupbox_name,
                                    value=self.scan_limits_xx_yy[0], vmin=-25, vmax=25, decimals=4,
                                    enabled=True, func=self.set_scan_region, **{'scan_boundary': 'x_start'})
-        self.gui.add_numeric_field('X stop, mm', groubox_name,
+        self.gui.add_numeric_field('X stop, mm', groupbox_name,
                                    value=self.scan_limits_xx_yy[1], vmin=-25, vmax=25, decimals=4,
                                    enabled=True, func=self.set_scan_region, **{'scan_boundary': 'x_stop'})
-        self.gui.add_numeric_field('Y start, mm', groubox_name,
+        self.gui.add_numeric_field('Y start, mm', groupbox_name,
                                    value=self.scan_limits_xx_yy[2], vmin=-25, vmax=25, decimals=4,
                                    enabled=True, func=self.set_scan_region, **{'scan_boundary': 'y_start'})
-        self.gui.add_numeric_field('Y stop, mm', groubox_name,
+        self.gui.add_numeric_field('Y stop, mm', groupbox_name,
                                    value=self.scan_limits_xx_yy[3], vmin=-25, vmax=25, decimals=4,
                                    enabled=True, func=self.set_scan_region, **{'scan_boundary': 'y_stop'})
-        self.gui.add_numeric_field('Trigger interval X, mm', groubox_name,
+        self.gui.add_numeric_field('Trigger interval X, mm', groupbox_name,
                                    value=self.pulse_intervals_xy[0], vmin=0, vmax=25, decimals=4,
                                    enabled=True, func=self.set_trigger_intervals, **{'trigger_axis': 'X'})
-        self.gui.add_numeric_field('Trigger interval Y, mm', groubox_name,
+        self.gui.add_numeric_field('Trigger interval Y, mm', groupbox_name,
                                    value=self.pulse_intervals_xy[1], vmin=0, vmax=25, decimals=4,
                                    enabled=True, func=self.set_trigger_intervals, **{'trigger_axis': 'Y'})
-        self.gui.add_button('Start scanning', groubox_name,
+        self.gui.add_button('Start scanning', groupbox_name,
                             lambda: self.start_scan())
 
     @QtCore.pyqtSlot()

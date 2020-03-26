@@ -10,9 +10,10 @@ config = {'port': "COM11",
           'baud': 115200,
           'timeout_s': 0.2}
 
+
 class ETL_controller(QtCore.QObject):
     """
-    Wrapper class for serial control of Optotune ETL lenses, written by @nvladimus.
+    Wrapper class for serial control of Optotune ETL lenses, by @nvladimus.
     Functional core taken from https://github.com/OrganicIrradiation/opto by @OrganicIrradiation.
     Current units: mA.
     """
@@ -48,7 +49,7 @@ class ETL_controller(QtCore.QObject):
 
     def connect(self):
         """
-        Open the serial port and connect
+        Open the serial port and initialize
         """
         self._ser = serial.Serial()
         self._ser.baudrate = self.baud
@@ -595,6 +596,7 @@ class ETL_controller(QtCore.QObject):
     @QtCore.pyqtSlot()
     def _update_gui(self):
         self.gui.update_string_field('Status', self._status)
+
 
 # run if the module is launched as a standalone program
 if __name__ == "__main__":
