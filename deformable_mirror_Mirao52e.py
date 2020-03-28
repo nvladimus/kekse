@@ -121,13 +121,13 @@ class DmController(QtCore.QObject):
             self.logger.error(f'Numpy file {filepath} failed to open.')
 
     def read_mro_file(self, filepath: str) -> np.ndarray:
-        Cpath = ctypes.c_char_p(filepath.encode('utf-8'))
+        cpath = ctypes.c_char_p(filepath.encode('utf-8'))
         cmdType = ctypes.c_double * self.n_actuators
         cmd = cmdType()
         self.dev_handle.mro_readCommandFile.argtypes = [ctypes.c_char_p, cmdType, ctypes.POINTER(ctypes.c_int64)]
         if os.path.exists(filepath) and filepath[-4:] == '.mro':
             try:
-                self.dev_handle.mro_readCommandFile(Cpath, cmd, ctypes.byref(self._status))
+                self.dev_handle.mro_readCommandFile(cpath, cmd, ctypes.byref(self._status))
             except:
                 pass
             self.update_log(self._status.value)
