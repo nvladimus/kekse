@@ -214,19 +214,18 @@ class MotionController(QtCore.QObject):
         self.logger.info(f'halt() response: {response}')
 
     def _setup_gui(self):
-        self.gui.add_tabs("Control Tabs", tabs=['Basic', 'Scan'])
-        tab_name = 'Basic'
-        groupbox_name = 'Connection'
-        self.gui.add_groupbox(title=groupbox_name, parent=tab_name)
+        self.gui.add_tabs("Control Tabs", tabs=['Connection', 'Motion', 'Scanning'])
+        tab_name = 'Connection'
         # Connection controls
-        self.gui.add_string_field('Port', groupbox_name, value=self.port, func=self._set_port)
-        self.gui.add_numeric_field('Baud', groupbox_name, value=self.baud, func=self._set_baud,
+        self.gui.add_string_field('Port', tab_name, value=self.port, func=self._set_port)
+        self.gui.add_numeric_field('Baud', tab_name, value=self.baud, func=self._set_baud,
                                    vmin=9600, vmax=115200, enabled=True, decimals=0)
-        self.gui.add_button('Connect', groupbox_name,
+        self.gui.add_button('Connect', tab_name,
                             lambda: self.initialize(self.port, self.baud, self.timeout_s))
-        self.gui.add_button('Disconnect', groupbox_name,
+        self.gui.add_button('Disconnect', tab_name,
                             lambda: self.disconnect())
         # Position/speed controls
+        tab_name = 'Motion'
         groupbox_name = 'Position'
         self.gui.add_groupbox(title=groupbox_name, parent=tab_name)
         self.gui.add_numeric_field('X pos., mm',  groupbox_name,
@@ -246,7 +245,8 @@ class MotionController(QtCore.QObject):
                             lambda: self.move_abs((self.target_pos_x_mm, self.target_pos_y_mm)))
         self.gui.add_button('STOP', groupbox_name,
                             lambda: self.halt())
-        # Speed
+
+        tab_name = 'Motion'
         groupbox_name = 'Speed'
         self.gui.add_groupbox(title=groupbox_name, parent=tab_name)
         self.gui.add_numeric_field('Speed X, mm/s', groupbox_name,
@@ -256,7 +256,7 @@ class MotionController(QtCore.QObject):
                                    value=self.speed_y, vmin=0, vmax=7.5, decimals=5,
                                    enabled=True, func=self.set_speed, **{'axis': 'Y'})
 
-        tab_name = 'Scan'
+        tab_name = 'Scanning'
         groupbox_name = 'Scan region'
         self.gui.add_groupbox(title=groupbox_name, parent=tab_name)
         self.gui.add_numeric_field('X start, mm', groupbox_name,

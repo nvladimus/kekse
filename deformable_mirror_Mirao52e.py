@@ -14,8 +14,8 @@ import numpy as np
 from PyQt5 import QtCore, QtWidgets
 from PyQt5.QtCore import pyqtSignal
 
-config = {'dll_path': "./ignored/mirao/mirao52e.dll",
-          'flat_file': './ignored/mirao/flat.mro'}
+config = {'dll_path': "./src/deformable_mirror/mirao52e.dll",
+          'flat_file': './src/deformable_mirror/flat.mro'}
 logging.basicConfig()
 
 
@@ -35,17 +35,17 @@ class DmController(QtCore.QObject):
         self.cmd_flat = None
         self.dev_handle = None
         self.n_actuators = 52
+        self.diameter_mm = 15.0
         self.command = np.zeros(self.n_actuators)
         self._status = ctypes.c_int64()  # possibly c_int32() in some versions, Todo: test
         self._trigger = ctypes.c_int64()
-        self.logger_name = logger_name
         self.logger = logging.getLogger(logger_name)
         self.logger.setLevel(logging.DEBUG)
         self.check_files()
         # GUI setup
         self.gui_on = gui_on
         if self.gui_on:
-            self.logger.info("GUI activated")
+            self.logger.debug("DM GUI on")
             self.gui = wd.widget(dev_name)
             self._setup_gui()
             self.sig_update_gui.connect(self._update_gui)
@@ -74,12 +74,12 @@ class DmController(QtCore.QObject):
             if self.gui_on:
                 self.sig_update_gui.emit()
         else:
-            self.logger.error("DM device handle is empty, check DLL path.")
+            self.logger.error("DM device handle is empty.")
 
     def apply_flat(self):
         """Apply factory-supplied flat command from .mro file"""
-        self.cmd_flat = self.read_mro_file(self.flat_file)
         if self.dev_handle is not None:
+            self.cmd_flat = self.read_mro_file(self.flat_file)
             try:
                 self.dev_handle.mro_applySmoothCommand(self.cmd_flat.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
                                                        self._trigger, ctypes.byref(self._status))
@@ -121,18 +121,22 @@ class DmController(QtCore.QObject):
             self.logger.error(f'Numpy file {filepath} failed to open.')
 
     def read_mro_file(self, filepath: str) -> np.ndarray:
-        cpath = ctypes.c_char_p(filepath.encode('utf-8'))
-        cmdType = ctypes.c_double * self.n_actuators
-        cmd = cmdType()
-        self.dev_handle.mro_readCommandFile.argtypes = [ctypes.c_char_p, cmdType, ctypes.POINTER(ctypes.c_int64)]
-        if os.path.exists(filepath) and filepath[-4:] == '.mro':
-            try:
-                self.dev_handle.mro_readCommandFile(cpath, cmd, ctypes.byref(self._status))
-            except:
-                pass
-            self.update_log(self._status.value)
+        if self.dev_handle is not None:
+            cpath = ctypes.c_char_p(filepath.encode('utf-8'))
+            cmdType = ctypes.c_double * self.n_actuators
+            cmd = cmdType()
+            self.dev_handle.mro_readCommandFile.argtypes = [ctypes.c_char_p, cmdType, ctypes.POINTER(ctypes.c_int64)]
+            if os.path.exists(filepath) and filepath[-4:] == '.mro':
+                try:
+                    self.dev_handle.mro_readCommandFile(cpath, cmd, ctypes.byref(self._status))
+                except:
+                    pass
+                self.update_log(self._status.value)
+            else:
+                self.logger.error(f'MRO file {filepath} not found, or has invalid extension (must be .mro).')
         else:
-            self.logger.error(f'MRO file {filepath} not found, or has invalid extension (must be .mro).')
+            self.logger.error(f'DM handle is None, device is not initialized.')
+            cmd = [0]*self.n_actuators
         return np.asarray(cmd)
 
     def update_log(self, return_status: int):
