@@ -8,6 +8,7 @@ import motion_controller_Thorlabs_MCM3000 as Controller
 import etl_controller_Optotune as Etl
 import stage_ASI_MS2000 as stage_ASI
 import deformable_mirror_Mirao52e as def_mirror
+import hamamatsu_camera as cam
 
 if __name__ == '__main__':
     app = QtWidgets.QApplication(sys.argv)
@@ -27,5 +28,9 @@ if __name__ == '__main__':
     # DM Mirao52e:
     dev4 = def_mirror.DmController()
     dev4.gui.show()
+    
+    # Hamamatsu Orca4.0 control:
+    dev5 = cam.CamController()
+    dev5.gui.show()
 
     app.exec_()
