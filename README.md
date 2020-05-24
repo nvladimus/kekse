@@ -3,7 +3,7 @@ Designed for modular GUI software for microscope control,
 where individual modules can be built, mixed and matched easily.
 
 Design principles: 
-* Each device is represented by 1 module, which contains 1 file, 1 main class, 1 (optional) GUI panel. 
+* Each device is represented by 1 module, which contains 1 file, 1 main class, 1 (optional) GUI window. 
 * Device modules are independent from each other and self-contained, 
 similar to LabView virtual instruments. Each module can be run on it's own, 
 or envoked from a higher-level code (eg. from `gui_demo.py`)
