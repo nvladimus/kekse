@@ -23,12 +23,11 @@ Once there, clone this repo and run
 python gui_demo.py
 ```
 
-This will launch all currenly available modules, and give a basic usage example inside a pprogram.
+This will launch all currenly available modules, and give a basic usage example inside a program.
 To launch an individual module, you can also run it from command line, for example
 
 ```
 python stage_ASI_MS2000.py
 ```
 
-Recent changes in hardware modules are not tested on devices, due to development in home office.
 To be continued...
