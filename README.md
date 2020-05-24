@@ -1,6 +1,6 @@
-# pytroller
-An attempt to make modular GUI software for microscope control, 
-where individual modules can be mixed and matched (relatively) easily.
+# kekse
+Designed for modular GUI software for microscope control, 
+where individual modules can be built, mixed and matched easily.
 
 Design principles: 
 * Each device is represented by 1 module, which contains 1 file, 1 main class, 1 (optional) GUI panel. 
