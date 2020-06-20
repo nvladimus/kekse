@@ -16,7 +16,7 @@ config = {
     'sensor_shape': (2048, 2048),  # (Y,X)
     'exposure_ms': 20,
     # triggers in block
-    'trigger_in': False,
+    'trigger_in': True,
     'trig_in_mode': 'NORMAL',  # 'NORMAL', 'START'
     'trig_in_source': 'EXTERNAL',  # 'INTERNAL', 'EXTERNAL', 'SOFTWARE', 'MASTER_PULSE'
     'trig_in_type': 'SYNCREADOUT',  # 'EDGE', 'LEVEL', 'SYNCREADOUT'
@@ -959,6 +959,8 @@ class CamController(QtCore.QObject):
         self.frame_height_px = self.config['image_shape'][1]
         self.cam_voffset = 0
         self.frame_readout_ms = 10.0
+        self.trigger_in = self.config['trigger_in']
+        self.trigger_out = self.config['trigger_out']
         self.logger = logging.getLogger(logger_name)
         self.logger.setLevel(logging.DEBUG)
         # GUI setup
@@ -985,6 +987,7 @@ class CamController(QtCore.QObject):
                     self.logger.info(f"Connected to Camera 0, model {self.dev_handle.getModelInfo(0)}")
                     self.status = 'Connected'
                     self.setup()
+                    self.last_image = np.random.randint(75, 125, size=self.config['image_shape'], dtype='uint16')
             else:
                 self.logger.error("Camera already initialized!")
 
@@ -1011,54 +1014,65 @@ class CamController(QtCore.QObject):
             self.sig_update_gui.emit()
 
     def setup_triggers(self):
-        if self.config['trigger_in']:
-            dicti = {'NORMAL': 1, 'START': 6}
-            self._set_property_from_dict('trig_in_mode', dicti)
+        if self.dev_handle:
+            if self.trigger_in:
+                dicti = {'NORMAL': 1, 'START': 6}
+                self._set_property_from_dict('trig_in_mode', dicti)
 
-            dicti = {'EXTERNAL': 1, 'SOFTWARE': 2}
-            self._set_property_from_dict("master_pulse_source", dicti)
+                dicti = {'EXTERNAL': 1, 'SOFTWARE': 2}
+                self._set_property_from_dict("master_pulse_source", dicti)
 
-            dicti = {'INTERNAL': 1, 'EXTERNAL': 2, 'SOFTWARE': 3, 'MASTER_PULSE': 4}
-            self._set_property_from_dict("trig_in_source", dicti)
+                dicti = {'INTERNAL': 1, 'EXTERNAL': 2, 'SOFTWARE': 3, 'MASTER_PULSE': 4}
+                self._set_property_from_dict("trig_in_source", dicti)
 
-            dicti = {'EDGE': 1, 'LEVEL': 2, 'SYNCREADOUT': 3}
-            self._set_property_from_dict('trig_in_type', dicti)
+                dicti = {'EDGE': 1, 'LEVEL': 2, 'SYNCREADOUT': 3}
+                self._set_property_from_dict('trig_in_type', dicti)
 
-            dicti = {'NEGATIVE': 1, 'POSITIVE': 2}
-            self._set_property_from_dict('trig_in_polarity', dicti)
+                dicti = {'NEGATIVE': 1, 'POSITIVE': 2}
+                self._set_property_from_dict('trig_in_polarity', dicti)
 
-            if self.config['trig_in_source'] == 'MASTER_PULSE':
-                dicti = {'CONTINUOUS': 1, 'START': 2, 'BURST': 3}
-                self._set_property_from_dict('master_pulse_mode', dicti)
-                self.dev_handle.setPropertyValue("master_pulse_burst_times", self.config['master_pulse_burst_times'])
-                self.dev_handle.setPropertyValue("master_pulse_interval", self.config['master_pulse_interval_s'])
-        else:  # reset trigger_in to default values
-            self.dev_handle.setPropertyValue("trigger_mode", 1)  # NORMAL / 1
-            self.dev_handle.setPropertyValue("master_pulse_trigger_source", 2)  # SOFTWARE
-            self.dev_handle.setPropertyValue("trigger_source", 1)  # INTERNAL
-            self.dev_handle.setPropertyValue("trigger_active", 1)  # EDGE / 1
-            self.dev_handle.setPropertyValue("master_pulse_mode", 1)  # CONTINUOUS /1
-            self.dev_handle.setPropertyValue("master_pulse_burst_times", 1)
-            self.dev_handle.setPropertyValue("master_pulse_interval", 0.1)
+                if self.config['trig_in_source'] == 'MASTER_PULSE':
+                    dicti = {'CONTINUOUS': 1, 'START': 2, 'BURST': 3}
+                    self._set_property_from_dict('master_pulse_mode', dicti)
+                    self.dev_handle.setPropertyValue("master_pulse_burst_times", self.config['master_pulse_burst_times'])
+                    self.dev_handle.setPropertyValue("master_pulse_interval", self.config['master_pulse_interval_s'])
+            else:  # reset trigger_in to default values
+                self.dev_handle.setPropertyValue("trigger_mode", 1)  # NORMAL / 1
+                self.dev_handle.setPropertyValue("master_pulse_trigger_source", 2)  # SOFTWARE
+                self.dev_handle.setPropertyValue("trigger_source", 1)  # INTERNAL
+                self.dev_handle.setPropertyValue("trigger_active", 1)  # EDGE / 1
+                self.dev_handle.setPropertyValue("master_pulse_mode", 1)  # CONTINUOUS /1
+                self.dev_handle.setPropertyValue("master_pulse_burst_times", 1)
+                self.dev_handle.setPropertyValue("master_pulse_interval", 0.1)
 
-        # Trigger OUT
-        if self.config['trigger_out']:
-            dicti = {'LOW': 1, 'EXPOSURE': 2, 'PROGRAMMABLE': 3, 'TRIGGER READY': 4, 'HIGH': 5}
-            self._set_property_from_dict('trig_out_kind', dicti)
+            # Trigger OUT
+            if self.trigger_out:
+                dicti = {'LOW': 1, 'EXPOSURE': 2, 'PROGRAMMABLE': 3, 'TRIGGER READY': 4, 'HIGH': 5}
+                self._set_property_from_dict('trig_out_kind', dicti)
 
-            if self.config['trig_out_kind'] == 'PROGRAMMABLE':
-                dicti = {'READOUT_END': 2, 'VSYNC': 3, 'MASTER_PULSE': 6}
-                self._set_property_from_dict('trig_out_source', dicti)
+                if self.config['trig_out_kind'] == 'PROGRAMMABLE':
+                    dicti = {'READOUT_END': 2, 'VSYNC': 3, 'MASTER_PULSE': 6}
+                    self._set_property_from_dict('trig_out_source', dicti)
 
-            self.dev_handle.setPropertyValue("output_trigger_period[0]", self.config['trig_out_duration_s'])
+                self.dev_handle.setPropertyValue("output_trigger_period[0]", self.config['trig_out_duration_s'])
 
-            dicti = {'NEGATIVE': 1, 'POSITIVE': 2}
-            self._set_property_from_dict('trig_out_polarity', dicti)
-        else:  # defaults
-            self.dev_handle.setPropertyValue("output_trigger_kind[0]", 2)
-            self.dev_handle.setPropertyValue("output_trigger_source[0]", 2)
-            self.dev_handle.setPropertyValue("output_trigger_period[0]", 0.001)
-            self.dev_handle.setPropertyValue("output_trigger_polarity[0]", 2)
+                dicti = {'NEGATIVE': 1, 'POSITIVE': 2}
+                self._set_property_from_dict('trig_out_polarity', dicti)
+            else:  # defaults
+                self.dev_handle.setPropertyValue("output_trigger_kind[0]", 2)
+                self.dev_handle.setPropertyValue("output_trigger_source[0]", 2)
+                self.dev_handle.setPropertyValue("output_trigger_period[0]", 0.001)
+                self.dev_handle.setPropertyValue("output_trigger_polarity[0]", 2)
+        else:
+            self.logger.error('Camera handle is empty. Please initialize camera first.')
+
+    def setup_trig_in(self, trig_in):
+        self.trigger_in = trig_in
+        self.setup_triggers()
+
+    def setup_trig_out(self, trig_out):
+        self.trigger_out = trig_out
+        self.setup_triggers()
 
     def _set_property_from_dict(self, prop_name, prop_dict):
         """Search the dictionary keys for property name. If found, set corresponding
@@ -1100,7 +1114,7 @@ class CamController(QtCore.QObject):
                 self.last_image = np.reshape(frames[0].getData().astype(np.uint16), dims)
             else:
                 self.logger.error("Camera buffer empty")
-                self.last_image = np.zeros(self.self.config['image_shape'])
+                self.last_image = np.zeros(self.config['image_shape'])
         else:
             self.logger.error("Camera is not initialized!")
             self.last_image = np.random.randint(100, 200, size=self.config['image_shape'], dtype='uint16')
@@ -1153,13 +1167,13 @@ class CamController(QtCore.QObject):
         self.gui.add_checkbox('Simulation', tab_name, self.config['simulation'], enabled=False)
 
         groupbox_name = 'Connection'
-        self.gui.add_groupbox(title=groupbox_name, parent=tab_name)
+        self.gui.add_groupbox(label=groupbox_name, parent=tab_name)
         self.gui.add_button('Initialize', groupbox_name, lambda: self.initialize())
         self.gui.add_button('Disconnect', groupbox_name, lambda: self.disconnect())
         self.gui.add_string_field('Status', groupbox_name, value=self.status, enabled=False)
 
         groupbox_name = 'Frame control'
-        self.gui.add_groupbox(title=groupbox_name, parent=tab_name)
+        self.gui.add_groupbox(label=groupbox_name, parent=tab_name)
         self.gui.add_numeric_field('Exposure, ms', groupbox_name, value=self.exposure_ms, vmin=0, vmax=1000,
                                    enabled=True, decimals=1, func=self.set_exposure)
         self.gui.add_numeric_field('Image height, px', groupbox_name, value=self.frame_height_px,
@@ -1169,7 +1183,7 @@ class CamController(QtCore.QObject):
                                    vmin=0, vmax=10, enabled=False, decimals=1)
 
         tab_name = 'Trigger IN'
-        self.gui.add_checkbox('Trigger in', tab_name, self.config['trigger_in'], enabled=False)
+        self.gui.add_checkbox('Trigger in', tab_name, self.trigger_in, enabled=True, func=self.setup_trig_in)
         self.gui.add_string_field('trig_in_mode', tab_name, value=self.config['trig_in_mode'], enabled=False)
         self.gui.add_string_field('trig_in_source', tab_name, value=self.config['trig_in_source'], enabled=False)
         self.gui.add_string_field('trig_in_type', tab_name, value=self.config['trig_in_type'], enabled=False)
@@ -1182,7 +1196,7 @@ class CamController(QtCore.QObject):
                                    value=self.config['master_pulse_interval_s'], decimals=3, enabled=False)
 
         tab_name = 'Trigger OUT'
-        self.gui.add_checkbox('Trigger out', tab_name, self.config['trigger_out'], enabled=False, func=None)
+        self.gui.add_checkbox('Trigger out', tab_name, self.trigger_out, enabled=True, func=self.setup_trig_out)
         self.gui.add_string_field('trig_out_kind', tab_name, value=self.config['trig_out_kind'], enabled=False)
         self.gui.add_string_field('trig_out_source', tab_name, value=self.config['trig_out_source'], enabled=False)
         self.gui.add_numeric_field('trig_out_duration_s', tab_name,

@@ -47,6 +47,7 @@ class MotionController(QtCore.QObject):
         self.initialized = False
         self.position_x_mm = self.position_y_mm = 0.0
         self.target_pos_x_mm = self.target_pos_y_mm = 0.0
+        self.backlash_mm = 0.03 # some stages are configured without anti-BL gear for smooth motion, and need a margin.
         # logger setup
         self.logger_name = logger_name
         self.logger = logging.getLogger(logger_name)
@@ -119,7 +120,7 @@ class MotionController(QtCore.QObject):
         else:
             self.logger.error("_flush(): serial port not initialized")
 
-    def disconnect(self):
+    def close(self):
         if not self.simulation:
             try:
                 self._ser.close()
@@ -215,6 +216,10 @@ class MotionController(QtCore.QObject):
 
     def set_n_scan_lines(self, n):
         self.n_scan_lines = n
+        if not self.simulation:
+            self._setup_scan()
+        if self.gui_on:
+            self.sig_update_gui.emit()
 
     def _setup_scan(self):
         """Send the scan parameters to the stage"""
@@ -222,7 +227,6 @@ class MotionController(QtCore.QObject):
         command = f'SCANR X={self.scan_limits_xx_yy[0]:.4f} ' \
                   f'Y={self.scan_limits_xx_yy[1]:.4f} ' \
                   f'Z={self.enc_counts_per_pulse}'
-        self.logger.debug(command)
         _ = self.write_with_response(command.encode())
         # set y-limits and the number of lines
         command = f'SCANV X={self.scan_limits_xx_yy[2]:.4f} ' \
@@ -238,8 +242,7 @@ class MotionController(QtCore.QObject):
         """Scan the stage with ENC_INT module.
         Functions set_scan_region() and set_trigger_intervals() must be called before it
         """
-        self.logger.info(f'scan limits: {self.scan_limits_xx_yy}')
-        self.logger.info(f'enc counts per pulse: {self.enc_counts_per_pulse}')
+        self.logger.debug(f'enc counts per pulse: {self.enc_counts_per_pulse}')
         response = self.write_with_response(b'SCAN')
         self.logger.debug(f'SCAN returned: {response}')
 
@@ -252,68 +255,60 @@ class MotionController(QtCore.QObject):
         tab_name = 'Connection'
         # Connection controls
         self.gui.add_checkbox('Simulation', tab_name, self.simulation, enabled=False)
+        self.gui.add_button('Initialize', tab_name, lambda: self.initialize(self.port, self.baud, self.timeout_s))
         self.gui.add_string_field('Port', tab_name, value=self.port, func=self._set_port)
-        self.gui.add_numeric_field('Baud', tab_name, value=self.baud, func=self._set_baud,
-                                   vmin=9600, vmax=115200, enabled=True, decimals=0)
-        self.gui.add_button('Initialize', tab_name,
-                            lambda: self.initialize(self.port, self.baud, self.timeout_s))
-        self.gui.add_button('Disconnect', tab_name,
-                            lambda: self.disconnect())
+        self.gui.add_numeric_field('Baud', tab_name, value=self.baud, func=self._set_baud, vmin=9600, vmax=115200)
+        self.gui.add_button('Disconnect', tab_name, func=self.close)
         # Position/speed controls
         tab_name = 'Motion'
         groupbox_name = 'Position'
-        self.gui.add_groupbox(title=groupbox_name, parent=tab_name)
-        self.gui.add_numeric_field('X pos., mm',  groupbox_name,
-                                   value=-1, vmin=-1e6, vmax=1e6, enabled=False, decimals=5)
-        self.gui.add_numeric_field('Y pos., mm', groupbox_name,
-                                   value=-1, vmin=-1e6, vmax=1e6, enabled=False, decimals=5)
-        self.gui.add_button('Update position', groupbox_name,
-                            lambda: self.get_position())
+        self.gui.add_groupbox(label=groupbox_name, parent=tab_name)
+        self.gui.add_numeric_field('X pos., mm',  groupbox_name, value=-1, enabled=False, decimals=5)
+        self.gui.add_numeric_field('Y pos., mm', groupbox_name,  value=-1, enabled=False, decimals=5)
+        self.gui.add_button('Update position', groupbox_name, func=self.get_position)
         # Absolute move
         self.gui.add_numeric_field('Target X, mm', groupbox_name,
-                                   value=0, vmin=-25., vmax=25., decimals=5,
-                                   enabled=True, func=self.set_target_x)
+                                   value=0, vmin=-25., vmax=25., decimals=5, func=self.set_target_x)
         self.gui.add_numeric_field('Target Y, mm', groupbox_name,
-                                   value=0, vmin=-25., vmax=25., decimals=5,
-                                   enabled=True, func=self.set_target_y)
+                                   value=0, vmin=-25., vmax=25., decimals=5, func=self.set_target_y)
         self.gui.add_button('Move to target', groupbox_name,
                             lambda: self.move_abs((self.target_pos_x_mm, self.target_pos_y_mm)))
-        self.gui.add_button('STOP', groupbox_name,
-                            lambda: self.halt())
+        self.gui.add_button('STOP', groupbox_name, func=self.halt)
 
         tab_name = 'Motion'
         groupbox_name = 'Speed'
-        self.gui.add_groupbox(title=groupbox_name, parent=tab_name)
+        self.gui.add_groupbox(label=groupbox_name, parent=tab_name)
         self.gui.add_numeric_field('Speed X, mm/s', groupbox_name,
                                    value=self.speed_x, vmin=0, vmax=7.5, decimals=5,
-                                   enabled=True, func=self.set_speed, **{'axis': 'X'})
+                                   func=self.set_speed, **{'axis': 'X'})
         self.gui.add_numeric_field('Speed Y, mm/s', groupbox_name,
                                    value=self.speed_y, vmin=0, vmax=7.5, decimals=5,
-                                   enabled=True, func=self.set_speed, **{'axis': 'Y'})
+                                   func=self.set_speed, **{'axis': 'Y'})
 
         tab_name = 'Scanning'
         groupbox_name = 'Scan region'
-        self.gui.add_groupbox(title=groupbox_name, parent=tab_name)
+        self.gui.add_groupbox(label=groupbox_name, parent=tab_name)
         self.gui.add_numeric_field('X start, mm', groupbox_name,
                                    value=self.scan_limits_xx_yy[0], vmin=-25, vmax=25, decimals=4,
-                                   enabled=True, func=self.set_scan_region, **{'scan_boundary': 'x_start'})
+                                   func=self.set_scan_region, **{'scan_boundary': 'x_start'})
         self.gui.add_numeric_field('X stop, mm', groupbox_name,
                                    value=self.scan_limits_xx_yy[1], vmin=-25, vmax=25, decimals=4,
-                                   enabled=True, func=self.set_scan_region, **{'scan_boundary': 'x_stop'})
+                                   func=self.set_scan_region, **{'scan_boundary': 'x_stop'})
         self.gui.add_numeric_field('Y start, mm', groupbox_name,
                                    value=self.scan_limits_xx_yy[2], vmin=-25, vmax=25, decimals=4,
-                                   enabled=True, func=self.set_scan_region, **{'scan_boundary': 'y_start'})
+                                   func=self.set_scan_region, **{'scan_boundary': 'y_start'})
         self.gui.add_numeric_field('Y stop, mm', groupbox_name,
                                    value=self.scan_limits_xx_yy[3], vmin=-25, vmax=25, decimals=4,
-                                   enabled=True, func=self.set_scan_region, **{'scan_boundary': 'y_stop'})
+                                   func=self.set_scan_region, **{'scan_boundary': 'y_stop'})
         self.gui.add_numeric_field('Trigger interval X, mm', groupbox_name,
-                                   value=self.pulse_intervals_x, vmin=0, vmax=25, decimals=4,
-                                   enabled=True, func=self.set_trigger_intervals, **{'trigger_axis': 'X'})
+                                   value=self.pulse_intervals_x, vmin=0, vmax=25, decimals=5,
+                                   func=self.set_trigger_intervals, **{'trigger_axis': 'X'})
         self.gui.add_numeric_field('Num. of lines', groupbox_name,
                                    value=self.n_scan_lines, vmin=0, vmax=10000, decimals=0,
-                                   enabled=True, func=self.set_n_scan_lines)
-        self.gui.add_button('Start scanning', groupbox_name,
-                            lambda: self.start_scan())
+                                   func=self.set_n_scan_lines)
+        self.gui.add_numeric_field('Backlash margin, mm', groupbox_name,
+                                   value=self.backlash_mm, vmin=0, vmax=0.05, decimals=3, enabled=False)
+        self.gui.add_button('Start scanning', groupbox_name, func=self.start_scan)
 
     @QtCore.pyqtSlot()
     def _update_gui(self):

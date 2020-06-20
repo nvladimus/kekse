@@ -9,6 +9,7 @@ import etl_controller_Optotune as Etl
 import stage_ASI_MS2000 as stage_ASI
 import deformable_mirror_Mirao52e as def_mirror
 import hamamatsu_camera as cam
+import lightsheet_generator as lsg
 
 if __name__ == '__main__':
     app = QtWidgets.QApplication(sys.argv)
@@ -32,5 +33,9 @@ if __name__ == '__main__':
     # Hamamatsu Orca4.0 control:
     dev5 = cam.CamController()
     dev5.gui.show()
+    
+    # Light-sheet DAQmx waveform generator, with optional Arduino device:
+    dev6 = cam.LightsheetGenerator()
+    dev6.gui.show()
 
     app.exec_()
