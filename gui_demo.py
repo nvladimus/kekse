@@ -35,7 +35,7 @@ if __name__ == '__main__':
     dev5.gui.show()
     
     # Light-sheet DAQmx waveform generator, with optional Arduino device:
-    dev6 = cam.LightsheetGenerator()
+    dev6 = lsg.LightsheetGenerator()
     dev6.gui.show()
 
     app.exec_()
