@@ -1,10 +1,9 @@
 # kekse
-Designed for modular GUI software for microscope control, 
-where individual modules can be built, mixed and matched easily.
+PyQt interface for quick building of instrument control software, with optional GUI frontend. Implied to be as simple as keks :cookie:
 
 Design principles: 
-* Each device is represented by 1 module, which contains 1 file, 1 main class, 1 (optional) GUI window. 
-* Device modules are independent from each other and self-contained, 
+* Each device has 1 module: 1 file, 1 main class, 1 (optional) GUI window. 
+* Modules are independent from each other and self-contained, 
 similar to LabView virtual instruments. Each module can be run on it's own, 
 or envoked from a higher-level code (eg. from `gui_demo.py`)
 * GUI is minimal but extendable, abstracted via `widget.py` (PyQt5).
