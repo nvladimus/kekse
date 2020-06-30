@@ -1,9 +1,6 @@
 '''This is class for generating triggered AO waveforms.
 The AO task listens to the input TTL pulse (eg from camera) and generates
 short finite AO waveform to synchronously move galvo and turn on the laser.
-
-The optional Arduino device counts TTL camera pulses and periodically 
-adds a bias to the galvo waveform (https://github.com/nvladimus/pulse_counter/tree/bipolar-AO)
 Copyright @nvladimus, 2020
 '''
 
@@ -19,12 +16,18 @@ from functools import partial
 
 config = {
     'swipe_duration_ms': 1.0,
-    'L-galvo_offsets_volts': -0.32, 'R-galvo_offsets_volts': 0.45,
-    'L-galvo_amp_volts': 0.60,      'R-galvo_amp_volts': 0.60,
-    'laser_max_volts': 1.0,         'laser_pow_volts': 1.0,
+    'L-galvo_offsets_volts': -0.30,
+    'R-galvo_offsets_volts': 0.47,
+    'L-galvo_amp_volts': 0.50,
+    'R-galvo_amp_volts': 0.50,
+    'laser_max_volts': 5.0,
+    'laser_pow_volts': 5.0,
     'arduino_switcher_port': 'COM6', # set None is no arduino board is used.
-    'active_arm': 'left',           'switch_auto': True,    'switch_every_n_pulses': 100,
-    'DAQ_trig_in_ch': '/Dev1/PFI0', 'DAQ_AO_ch': '/Dev1/ao0:1',
+    'active_arm': 'left',
+    'switch_auto': True,
+    'switch_every_n_pulses': 100,
+    'DAQ_trig_in_ch': '/Dev1/PFI0',
+    'DAQ_AO_ch': '/Dev1/ao0:1',
     'DAQ_sample_rate_Hz': 20000
 }
 
@@ -104,22 +107,22 @@ class LightsheetGenerator(QtCore.QObject):
                 self.serial_arduino = serial.Serial(port, 9600, timeout=2)
                 self.serial_arduino.write("?ver\n".encode())
                 status = self.serial_arduino.readline().decode('utf-8')
-                self.logger.info(f"Connected to Arduino switcher, version: {status}")
+                self.logger.info(f"Connected to Arduino switcher, v. {status}")
             except serial.SerialException as e:
                 self.logger.error(f"Could not connect to Arduino, SerialException: {e}")
 
     def setup_arduino(self):
         """"Send the galvo bias values and N(frames per stack) to the Arduino switcher that flips the galvo bias
         every N input pulses"""
-        # automatic mode
+        # automatic switching mode
         if self.config['switch_auto']:
             if self.serial_arduino:
-                n_TTL_inputs = self.config['switch_every_n_pulses']
+                n_TTL_inputs = int(self.config['switch_every_n_pulses'])
                 galvo_offsets = self.config['L-galvo_offsets_volts'], self.config['R-galvo_offsets_volts']
                 self.serial_arduino.write(f'n {n_TTL_inputs}\n'.encode())
-                self.serial_arduino.write('reset\n'.encode())
                 self.serial_arduino.write(f'v0 {galvo_offsets[0]}\n'.encode())
                 self.serial_arduino.write(f'v1 {galvo_offsets[1]}\n'.encode())
+                self.serial_arduino.write('reset\n'.encode())
         # no switching, zero bias, fixed arm mode
         else:
             if self.serial_arduino:
@@ -143,7 +146,8 @@ class LightsheetGenerator(QtCore.QObject):
                 else:
                     offset, amp = self.config['R-galvo_offsets_volts'], self.config['R-galvo_amp_volts']
                 self.task_config(wf_duration_ms=self.config['swipe_duration_ms'],
-                                 galvo_offset_V=offset, galvo_amplitude_V=amp,
+                                 galvo_offset_V=offset * (not self.config['switch_auto']),
+                                 galvo_amplitude_V=amp,
                                  laser_amplitude_V=self.config['laser_pow_volts'],
                                  galvo_inertia_ms=0.2)
                 self.logger.info('DAQmx AO task configured.')
@@ -155,7 +159,7 @@ class LightsheetGenerator(QtCore.QObject):
         else:
             self.logger.error("DAQmx task is None")
 
-    def task_config(self, wf_duration_ms=50, galvo_offset_V=0, galvo_amplitude_V=1.0, laser_amplitude_V=0.0,
+    def task_config(self, wf_duration_ms, galvo_offset_V, galvo_amplitude_V, laser_amplitude_V,
                     galvo_inertia_ms=0.20):
         """Configuration and automatic restart of light-sheet generation DAQmx AO task.
         Channels:
@@ -199,12 +203,16 @@ class LightsheetGenerator(QtCore.QObject):
     def update_config(self, key, value):
         if key in self.config.keys():
             self.config[key] = value
+            self.logger.debug(f'{key}: {value}')
         else:
             self.logger.error("Parameter name not found in config file")
-        self.setup_arduino()
-        self.setup_ls()
+        self.setup()
         if self.gui_on:
             self.sig_update_gui.emit()
+
+    def setup(self):
+        self.setup_arduino()
+        self.setup_ls()
 
     def _setup_gui(self):
         self.gui.add_tabs("Control Tabs", tabs=['LS settings', 'DAQ settings'])
@@ -230,7 +238,8 @@ class LightsheetGenerator(QtCore.QObject):
         self.gui.add_numeric_field('Laser power (V)', tab_name, value=self.config['laser_pow_volts'],
                                    vmin=0, vmax=self.config['laser_max_volts'], decimals=2,
                                    func=partial(self.update_config, 'laser_pow_volts'))
-        self.gui.add_combobox('Active arm', tab_name, items=['left', 'right'], value=self.config['active_arm'], func=partial(self.update_config, 'active_arm'))
+        self.gui.add_combobox('Active arm', tab_name, ['left', 'right'], value=self.config['active_arm'],
+                              func=partial(self.update_config, 'active_arm'))
         self.gui.add_numeric_field('Switch every N pulses', tab_name, value=self.config['switch_every_n_pulses'],
                                    vmin=0, vmax=10000, decimals=0,
                                    func=partial(self.update_config, 'switch_every_n_pulses'))
