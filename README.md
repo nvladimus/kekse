@@ -52,7 +52,7 @@ The whole GUI code is shown below
         self.gui.add_combobox('Parameter 4', tab_name, items=['option1', 'option2'],
                               value=self.config['param4combo'], func=partial(self.update_config, 'param4combo'))
         self.gui.add_button('Disconnect', tab_name, lambda: self.close())
-        ```
+```
 
 Note the *what you see is what you get* principle, so `Parameter 1` is both the label on the GUI panel and the name of numeric field widget in the code. For example, function `_update_gui()` calls it as such:
 ```
