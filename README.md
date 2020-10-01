@@ -2,13 +2,14 @@
 PyQt interface for quick building of instrument control software, with GUI frontend. Implied to be as simple as keks :cookie:
 
 Design principles: 
-* each device has 1 module: 1 file, 1 main class, 1 GUI window. 
-* minimum external dependencies, clear code
-* modules are independent from each other and self-contained, 
+* minimalism: 
+    - each device has one module which is one file containing one main class
+    - minimum external dependencies
+    - GUI is simple (no fancy styles), but easy to build and extend, and can be turned on/off
+* independence: modules are independent from each other and self-contained, 
 similar to LabView virtual instruments. 
-* GUI is minimal but easy to build and extend, can be turned on/off
-* widget labels in the GUI are actual widget names in the code, so you know exactly how to access anything you see in the GUI.
-* a module can be run on it's own (from command line), or envoked from a higher-level python code
+* *what you see is what you get:* widget labels in the GUI are actual widget names in the code, so you know exactly how to access anything.
+* versatility: a module can be run on it's own (from command line), or envoked from a master python program
 
 ### Installation
 The current code requires Python 3.6 and a few other libraries:
@@ -33,15 +34,14 @@ To create your own keks, a good starting point is looking into the template code
 self.gui.add_numeric_field('Parameter 1', tab_name, value=self.config['param1'], vmin=0.1, vmax=100, decimals=1, func=partial(self.update_config, 'param1'))
 ```
 This creates an input field `Parameter 1`, initiates it from `config` dictionary, sets limits and precision, and defines which function is called when the input value is changed. Launching it from command line `python device_template.py` displays the GUI. 
+
 ![Device template GUI](./images/dev_template.png)
 
-Note that here `what you see is what you get`, so `Parameter 1` is both a label on the GUI panel, and the name of numeric field widget in the code:
+Note the *what you see is what you get* principle, so `Parameter 1` is both a label on the GUI panel, and the name of numeric field widget in the code. For example, function `_update_gui()` calls it as such:
 ```
     def _update_gui(self):
         self.gui.update_param('Parameter 1', self.config['param1'])
-        self.gui.update_param('Parameter 3', self.config['param3_check'])
-        self.gui.update_param('Parameter 4', self.config['param4combo'])
-        self.logger.info('GUI updated')
+        ...
 ```
 So, keep an eye on the blank space between label words, eg calling widget `Parameter 1` works, but `Parameter  1` does not.
 
