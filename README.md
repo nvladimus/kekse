@@ -60,7 +60,7 @@ Note the *what you see is what you get* principle, so `Parameter 1` is both the 
         self.gui.update_param('Parameter 1', self.config['param1'])
         ...
 ```
-So, keep an eye on the blank space between label words, eg calling widget `Parameter / 1` works, but `Parameter / / 1` does not.
+So, keep an eye on the blank space between label words.
 
 ### Keks usage
 Keks is just a Python class, so all its methods are accessible from a master program that created the keks object. So, the master program can call any keks function:
