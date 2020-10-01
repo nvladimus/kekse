@@ -37,7 +37,24 @@ This creates an input field `Parameter 1`, initiates it from `config` dictionary
 
 ![Device template GUI](./images/dev_template.png)
 
-Note the *what you see is what you get* principle, so `Parameter 1` is both a label on the GUI panel, and the name of numeric field widget in the code. For example, function `_update_gui()` calls it as such:
+The whole GUI code is shown below
+```
+    def _setup_gui(self):
+        self.gui.add_tabs("Control Tabs", tabs=['Tab 1', 'Tab 2'])
+        tab_name = 'Tab 1'
+        self.gui.add_button('Initialize', tab_name, func=self.initialize)
+        self.gui.add_numeric_field('Parameter 1', tab_name, value=self.config['param1'],
+                                   vmin=0.1, vmax=100, decimals=1,
+                                   func=partial(self.update_config, 'param1'))
+        self.gui.add_string_field('Parameter 2', tab_name, value=self.config['param2'], enabled=False)
+        self.gui.add_checkbox('Parameter 3', tab_name,  value=self.config['param3_check'],
+                              func=partial(self.update_config, 'param3_check'))
+        self.gui.add_combobox('Parameter 4', tab_name, items=['option1', 'option2'],
+                              value=self.config['param4combo'], func=partial(self.update_config, 'param4combo'))
+        self.gui.add_button('Disconnect', tab_name, lambda: self.close())
+        ```
+
+Note the *what you see is what you get* principle, so `Parameter 1` is both the label on the GUI panel and the name of numeric field widget in the code. For example, function `_update_gui()` calls it as such:
 ```
     def _update_gui(self):
         self.gui.update_param('Parameter 1', self.config['param1'])
@@ -46,7 +63,7 @@ Note the *what you see is what you get* principle, so `Parameter 1` is both a la
 So, keep an eye on the blank space between label words, eg calling widget `Parameter 1` works, but `Parameter  1` does not.
 
 ### Keks usage
-Keks is just a Python class, so all its methods are accessible from a higher-level program that created the keks object. So, the master program can call any function:
+Keks is just a Python class, so all its methods are accessible from a master program that created the keks object. So, the master program can call any keks function:
 ```
 dev0 = dev_template.Device()
 dev0.gui.show()
