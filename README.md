@@ -53,7 +53,7 @@ The whole GUI code is shown below
                               value=self.config['param4combo'], func=partial(self.update_config, 'param4combo'))
         self.gui.add_button('Disconnect', tab_name, lambda: self.close())
 ```
-
+### GUI labels as widget names
 Note the *what you see is what you get* principle, so `Parameter 1` is both the label on the GUI panel and the name of numeric field widget in the code. For example, function `_update_gui()` will call it `Parameter 1` to update it's value from the `config` dictionary:
 ```
     def _update_gui(self):
