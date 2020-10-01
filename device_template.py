@@ -12,8 +12,8 @@ logging.basicConfig()
 config = {
     'param1': 1.0,  # numerical parameter
     'param2': 'string',  # string parameter
-    'param3': True,  # checkbox
-    'param4': 'option1'  # combobox parameter
+    'param3_check': True,  # checkbox
+    'param4combo': 'option1'  # combobox parameter
 }
 
 
@@ -62,19 +62,21 @@ class Device(QtCore.QObject):
                                    vmin=0.1, vmax=100, decimals=1,
                                    func=partial(self.update_config, 'param1'))
         self.gui.add_string_field('Parameter 2', tab_name, value=self.config['param2'], enabled=False)
-        self.gui.add_checkbox('Parameter 3', tab_name,  value=self.config['param3'],
-                              func=partial(self.update_config, 'param3'))
+        self.gui.add_checkbox('Parameter 3', tab_name,  value=self.config['param3_check'],
+                              func=partial(self.update_config, 'param3_check'))
         self.gui.add_combobox('Parameter 4', tab_name, items=['option1', 'option2'],
-                              value=self.config['param4'], func=partial(self.update_config, 'param4'))
+                              value=self.config['param4combo'], func=partial(self.update_config, 'param4combo'))
         self.gui.add_button('Disconnect', tab_name, lambda: self.close())
 
     @QtCore.pyqtSlot()
     def _update_gui(self):
         self.gui.update_param('Parameter 1', self.config['param1'])
+        self.gui.update_param('Parameter 3', self.config['param3_check'])
+        self.gui.update_param('Parameter 4', self.config['param4combo'])
         self.logger.info('GUI updated')
 
 
-# run if the module is launched as a standalone program
+# executed if the module is launched as a standalone program
 if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)
     dev = Device()

@@ -1,15 +1,17 @@
 # kekse
-PyQt interface for quick building of instrument control software, with optional GUI frontend. Implied to be as simple as keks :cookie:
+PyQt interface for quick building of instrument control software, with GUI frontend. Implied to be as simple as keks :cookie:
 
 Design principles: 
-* Each device has 1 module: 1 file, 1 main class, 1 (optional) GUI window. 
-* Modules are independent from each other and self-contained, 
-similar to LabView virtual instruments. Each module can be run on it's own, 
-or envoked from a higher-level code (eg. from `gui_demo.py`)
-* GUI is minimal but extendable, abstracted via `widget.py` (PyQt5).
+* each device has 1 module: 1 file, 1 main class, 1 GUI window. 
+* minimum external dependencies, clear code
+* modules are independent from each other and self-contained, 
+similar to LabView virtual instruments. 
+* GUI is minimal but easy to build and extend, can be turned on/off
+* widget labels in the GUI are actual widget names in the code, so you know exactly how to access anything you see in the GUI.
+* a module can be run on it's own (from command line), or envoked from a higher-level python code
 
 ### Installation
-The code requires Python 3.6 and a few other libraries:
+The current code requires Python 3.6 and a few other libraries:
 
 ```
 pip install PyQt5 
@@ -22,11 +24,36 @@ Once there, clone this repo and run
 python gui_demo.py
 ```
 
-This will launch all currenly available modules, and give a basic usage example inside a program.
-To launch an individual module, you can also run it from command line, for example
+This will launch several available modules as independent windows.
 
+## Making your own keks
+GUI generation is abstracted via local library file `widget.py` to hide the unnecessary details of PyQt5 API. 
+To create your own keks, a good starting point is looking into the template code in [device_template.py](device_template.py). Adding a new GUI widget is a one liner:
 ```
-python stage_ASI_MS2000.py
+self.gui.add_numeric_field('Parameter 1', tab_name, value=self.config['param1'], vmin=0.1, vmax=100, decimals=1, func=partial(self.update_config, 'param1'))
 ```
+This creates an input field `Parameter 1`, initiates it from `config` dictionary, sets limits and precision, and defines which function is called when the input value is changed. Launching it from command line `python device_template.py` displays the GUI. 
+![Device template GUI](./images/dev_template.png)
+
+Note that here `what you see is what you get`, so `Parameter 1` is both a label on the GUI panel, and the name of numeric field widget in the code:
+```
+    def _update_gui(self):
+        self.gui.update_param('Parameter 1', self.config['param1'])
+        self.gui.update_param('Parameter 3', self.config['param3_check'])
+        self.gui.update_param('Parameter 4', self.config['param4combo'])
+        self.logger.info('GUI updated')
+```
+So, keep an eye on the blank space between label words, eg calling widget `Parameter 1` works, but `Parameter  1` does not.
+
+### Keks usage
+Keks is just a Python class, so all its methods are accessible from a higher-level program that created the keks object. So, the master program can call any function:
+```
+dev0 = dev_template.Device()
+dev0.gui.show()
+dev0.do_something()
+```
+
+## Advanced control
+The [daoSPIM](https://github.com/nvladimus/daoSPIM/tree/master/microscope_control) project uses kekse connected together for microscope control, with signals/slots and multithreading on top.
 
 To be continued...

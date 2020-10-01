@@ -14,8 +14,10 @@ import numpy as np
 from PyQt5 import QtCore, QtWidgets
 from PyQt5.QtCore import pyqtSignal
 
-config = {'dll_path': "./src/deformable_mirror/mirao52e.dll",
-          'flat_file': './src/deformable_mirror/flat.mro'}
+config = {
+    'simulation': True,
+    'dll_path': "./src/deformable_mirror/mirao52e.dll",
+    'flat_file': './src/deformable_mirror/flat.mro'}
 logging.basicConfig()
 
 
@@ -29,11 +31,11 @@ class DmController(QtCore.QObject):
     def __init__(self, dev_name='Mirao52e', gui_on=True, logger_name='Mirao'):
         super().__init__()
         self.errors = {}
+        self.config = config
         self.initialize_err_codes(self.errors)
-        self.dll_path = config['dll_path']
-        self.flat_file = config['flat_file']
-        self.cmd_flat = None
-        self.dev_handle = None
+        self.dll_path = self.config['dll_path']
+        self.flat_file = self.config['flat_file']
+        self.cmd_flat = self.dev_handle = None
         self.n_actuators = 52
         self.diameter_mm = 15.0
         self.command = np.zeros(self.n_actuators)
@@ -51,17 +53,20 @@ class DmController(QtCore.QObject):
             self.sig_update_gui.connect(self._update_gui)
 
     def check_files(self):
-        if not os.path.exists(self.dll_path):
-            self.logger.error(f"DLL file does not exist at {self.dll_path}.")
+        if self.config['simulation']:
+            self.logger.info(f"Simulation mode")
         else:
-            try:
-                self.dev_handle = ctypes.windll.LoadLibrary(self.dll_path)
-            except Exception as e:
-                self.logger.error(f"Could not load DLL file from {self.dll_path}: {e}")
-            if os.path.exists(self.flat_file):
-                self.cmd_flat = self.read_mro_file(self.flat_file)
+            if not os.path.exists(self.dll_path):
+                self.logger.error(f"DLL file does not exist at {self.dll_path}.")
             else:
-                self.logger.error(f"Flat-command file does not exist at {self.dll_path}.")
+                try:
+                    self.dev_handle = ctypes.windll.LoadLibrary(self.dll_path)
+                except Exception as e:
+                    self.logger.error(f"Could not load DLL file from {self.dll_path}: {e}")
+                if os.path.exists(self.flat_file):
+                    self.cmd_flat = self.read_mro_file(self.flat_file)
+                else:
+                    self.logger.error(f"Flat-command file does not exist at {self.dll_path}.")
 
     def initialize(self):
         """Open deformable mirror session"""
