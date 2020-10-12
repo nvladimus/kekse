@@ -12,7 +12,7 @@ logging.basicConfig()
 config = {
     'Parameter 0': [1.0, [0, 100, 0.1]],  # [value, [min, max, step]]
     'Parameter 1': [0, [-1e6, 1e6, 10]],  # [value, [min, max, step]]
-    'Parameter String': ['a string', True],  # a string parameter: [value, editable]
+    'Parameter String': ['a string', True],  # a string parameter: [value, enabled?]
     'Param Checkbox': True,  # a checkbox
     'Param Combobox': ['option0', ['option0', 'option1']]  # a combobox: selected option and list of all options
 }

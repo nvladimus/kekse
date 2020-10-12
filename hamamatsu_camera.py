@@ -1175,16 +1175,21 @@ class CamController(QtCore.QObject):
 
         groupbox_name = 'Frame control'
         self.gui.add_groupbox(title=groupbox_name, parent=tab_name)
-        self.gui.add_numeric_field('Exposure, ms', groupbox_name, value=self.exposure_ms, vmin=0, vmax=1000,
-                                   enabled=True, decimals=1, func=self.set_exposure)
-        self.gui.add_numeric_field('Image height, px', groupbox_name, value=self.frame_height_px,
-                                   vmin=128, vmax=self.config['sensor_shape'][0],
-                                   enabled=True, decimals=0, func=self.set_frame_height)
-        self.gui.add_numeric_field('Readout time, ms', groupbox_name, value=self.frame_readout_ms,
-                                   vmin=0, vmax=10, enabled=False, decimals=1)
+        self.gui.add_numeric_field('Exposure, ms', groupbox_name,
+                                   value=self.exposure_ms,
+                                   vrange=[0, 1000, 1],
+                                   func=self.set_exposure)
+        self.gui.add_numeric_field('Image height, px', groupbox_name,
+                                   value=self.frame_height_px,
+                                   vrange=[128, self.config['sensor_shape'][0], 1],
+                                   func=self.set_frame_height)
+        self.gui.add_numeric_field('Readout time, ms', groupbox_name,
+                                   value=self.frame_readout_ms,
+                                   vrange=[0, 10, 0.1],
+                                   enabled=False)
 
         tab_name = 'Trigger IN'
-        self.gui.add_checkbox('Trigger in', tab_name, self.trigger_in, enabled=True, func=self.setup_trig_in)
+        self.gui.add_checkbox('Trigger in', tab_name, self.trigger_in, func=self.setup_trig_in)
         self.gui.add_string_field('trig_in_mode', tab_name, value=self.config['trig_in_mode'], enabled=False)
         self.gui.add_string_field('trig_in_source', tab_name, value=self.config['trig_in_source'], enabled=False)
         self.gui.add_string_field('trig_in_type', tab_name, value=self.config['trig_in_type'], enabled=False)
@@ -1197,12 +1202,14 @@ class CamController(QtCore.QObject):
                                    value=self.config['master_pulse_interval_s'], decimals=3, enabled=False)
 
         tab_name = 'Trigger OUT'
-        self.gui.add_checkbox('Trigger out', tab_name, self.trigger_out, enabled=True, func=self.setup_trig_out)
+        self.gui.add_checkbox('Trigger out', tab_name, self.trigger_out, func=self.setup_trig_out)
         self.gui.add_string_field('trig_out_kind', tab_name, value=self.config['trig_out_kind'], enabled=False)
         self.gui.add_string_field('trig_out_source', tab_name, value=self.config['trig_out_source'], enabled=False)
         self.gui.add_numeric_field('trig_out_duration_s', tab_name,
-                                   value=self.config['trig_out_duration_s'], decimals=3, enabled=False)
-        self.gui.add_string_field('trig_out_polarity', tab_name, value=self.config['trig_out_polarity'], enabled=False)
+                                   value=self.config['trig_out_duration_s'],
+                                   vrange=[0, 10, 0.001], enabled=False)
+        self.gui.add_string_field('trig_out_polarity', tab_name,
+                                  value=self.config['trig_out_polarity'], enabled=False)
 
     @QtCore.pyqtSlot()
     def _update_gui(self):
