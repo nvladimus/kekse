@@ -25,8 +25,9 @@ Install dependencies
 pip install --upgrade pip
 pip install -r requirements.txt
 ```
-Launch a demo program
+Launch the device template, or the demo program
 ```
+python device_template.py
 python gui_demo.py
 ```
 Explore the code and make your own kekse.
