@@ -10,11 +10,11 @@ from functools import partial
 logging.basicConfig()
 
 config = {
-    'param0': 1.0,  # a numeric parameter
-    'param1': 2.0,  # a numeric parameter
-    'param2': 'a string',  # a string parameter
-    'param_checkbox': True,  # a checkbox
-    'param_combobox': ['option0', ['option0', 'option1']]  # a combobox: selected option and list of all options
+    'Parameter 0': [1.0, [0, 100, 1]],  # [value, [min, max, step]]
+    'Parameter 1': [2.0, [-1e6, 1e6, 0.01]],  # [value, [min, max, step]]
+    'Parameter String': ['a string', True],  # a string parameter: [value, editable]
+    'Param Checkbox': True,  # a checkbox
+    'Param Combobox': ['option0', ['option0', 'option1']]  # a combobox: selected option and list of all options
 }
 
 
@@ -72,21 +72,25 @@ class Device(QtCore.QObject):
         self.gui.add_groupbox("Groupbox 0", 'Tab 0')
         container_title = "Groupbox 0"
         self.gui.add_label("This is just a label", container_title)
-        self.gui.add_numeric_field('Parameter 0', container_title, value=self.config['param1'],
-                                   vrange=[0, 100, 0.1],
-                                   func=partial(self.update_config, 'param0'))
-        self.gui.add_numeric_field('Parameter 1', container_title, value=self.config['param1'],
-                                   vrange=[-100, 100, 1],
-                                   func=partial(self.update_config, 'param1'))
-        self.gui.add_string_field('Parameter 2', container_title,
-                                  value=self.config['param2'],
-                                  func=partial(self.update_config, 'param2'))
-        self.gui.add_checkbox('Parameter 3', container_title,  value=self.config['param_checkbox'],
-                              func=partial(self.update_config, 'param_checkbox'))
-        self.gui.add_combobox('Parameter 4', container_title,
-                              value=self.config['param_combobox'][0], # initial value
-                              items=self.config['param_combobox'][1], # available options
-                              func=partial(self.update_config, 'param_combobox'))
+        self.gui.add_numeric_field('Parameter 0', container_title,
+                                   value=self.config['Parameter 0'][0], # Initial value
+                                   vrange=self.config['Parameter 0'][1], # [min, max, step]
+                                   func=partial(self.update_config, 'Parameter 0'))
+        self.gui.add_numeric_field('Parameter 1', container_title,
+                                   value=self.config['Parameter 1'][0], # Initial value
+                                   vrange=self.config['Parameter 1'][1], # [min, max, step]
+                                   func=partial(self.update_config, 'Parameter 1'))
+        self.gui.add_string_field('Parameter String', container_title,
+                                  value=config['Parameter String'][0], # Text
+                                  enabled=config['Parameter String'][1], # Editable?
+                                  func=partial(self.update_config, 'Parameter String'))
+        self.gui.add_checkbox('Param Checkbox', container_title,
+                              value=self.config['Param Checkbox'], # Checked?
+                              func=partial(self.update_config, 'Param Checkbox'))
+        self.gui.add_combobox('Param Combobox', container_title,
+                              value=self.config['Param Combobox'][0], # initial value
+                              items=self.config['Param Combobox'][1], # available options
+                              func=partial(self.update_config, 'Param Combobox'))
         self.gui.add_button('Do something', container_title, func=self.do_something)
         self.gui.add_button('Disconnect', 'Tab 0', func=self.close)
 
