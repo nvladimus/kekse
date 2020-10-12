@@ -2,7 +2,8 @@ import serial
 import time
 from ctypes import c_ushort
 import kekse
-from PyQt5 import QtCore
+import sys
+from PyQt5 import QtCore, QtWidgets
 from PyQt5.QtCore import pyqtSignal
 import logging
 logging.basicConfig()
@@ -13,7 +14,7 @@ config = {'port': "COM11",
           'ini_current_mA': -30.0}
 
 
-class ETL_controller(QtCore.QObject):
+class ETLController(QtCore.QObject):
     """
     Wrapper class for serial control of Optotune ETL lenses, written by @nvladimus.
     Functional core taken from https://github.com/OrganicIrradiation/opto by @OrganicIrradiation.
@@ -598,3 +599,10 @@ class ETL_controller(QtCore.QObject):
     def _update_gui(self):
         self.gui.update_param('Status', self._status)
         self.gui.update_param('Current, mA', self._current)
+
+# run if the module is launched as a standalone program
+if __name__ == "__main__":
+    app = QtWidgets.QApplication(sys.argv)
+    dev = ETLController()
+    dev.gui.show()
+    app.exec_()

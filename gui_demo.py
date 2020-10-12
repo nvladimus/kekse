@@ -24,7 +24,7 @@ if __name__ == '__main__':
     dev1.gui.show()
 
     # Optotune ETL:
-    #dev2 = Etl.ETL_controller()
+    #dev2 = Etl.ETLController()
     #dev2.gui.show()
 
     #ASI MS2000:
