@@ -596,5 +596,5 @@ class ETL_controller(QtCore.QObject):
 
     @QtCore.pyqtSlot()
     def _update_gui(self):
-        self.gui.update_string_field('Status', self._status)
-        self.gui.update_numeric_field('Current, mA', self._current)
+        self.gui.update_param('Status', self._status)
+        self.gui.update_param('Current, mA', self._current)

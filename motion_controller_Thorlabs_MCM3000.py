@@ -215,8 +215,8 @@ class MotionController(QtCore.QObject):
 
     @QtCore.pyqtSlot()
     def _update_gui(self):
-        self.gui.update_numeric_field('Position, encoder', self.position_encoder)
-        self.gui.update_numeric_field('Position, um', self.position_um)
+        self.gui.update_param('Position, encoder', self.position_encoder)
+        self.gui.update_param('Position, um', self.position_um)
 
     def close(self):
         try:
