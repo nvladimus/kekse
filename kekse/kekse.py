@@ -5,7 +5,7 @@ Copyright Nikita Vladimirov, @nvladimus 2020
 
 from PyQt5.QtWidgets import (QGroupBox, QLineEdit, QPushButton, QTabWidget, QCheckBox, QComboBox,
                              QVBoxLayout, QWidget, QDoubleSpinBox, QFormLayout, QLabel)
-from PyQt5.QtCore import QLocale
+import PyQt5.QtCore
 import numpy as np
 
 
@@ -23,8 +23,35 @@ class ProtoKeks(QWidget):
         self.layouts = {}
         self.layout_window = QVBoxLayout(self)
 
+    def add_tabs(self, title, tabs=['Tab1', 'Tab2'], parent=None):
+        """Add a tabs container.
+        Parameters:
+            :param title: str
+                A unique string ID for this group of tabs
+            :param tabs: list of str,
+                Names of tabs, e.g. ['Tab1', 'Tab2']
+        """
+        assert len(tabs) > 0, "Define the list of tab names (len > 1)"
+        assert title not in self.containers, f"Container name already exists:{title}"
+        for tab_name in tabs:
+            assert tab_name not in self.containers, f"Container name already exists:{tab_name}"
+        new_widget = QTabWidget()
+        self.containers[title] = new_widget
+        if parent is None:
+            self.layout_window.addWidget(new_widget)
+        else:
+            assert parent in self.layouts, f"Parent container name not found: {parent}"
+            assert title not in self.params, f"Widget name already exists: {title}"
+            self.layouts[parent].addWidget(new_widget)
+        for i in range(len(tabs)):
+            new_tab = QWidget()
+            self.containers[title].addTab(new_tab, tabs[i])
+            self.containers[tabs[i]] = new_tab
+            self.layouts[tabs[i]] = QFormLayout()
+            self.containers[tabs[i]].setLayout(self.layouts[tabs[i]])
+            
     def add_groupbox(self, title='Group 1', parent=None):
-        """ Add a groupbox widget.
+        """ Add a groupbox container.
         Parameters
         :param title: str
         :param parent: str
@@ -39,36 +66,15 @@ class ProtoKeks(QWidget):
         if parent is None:
             self.layout_window.addWidget(new_widget)
         else:
-            assert parent in self.layouts, "Parent container name not found: " + parent + "\n"
-            assert title not in self.params, "Widget name already exists: " + title + "\n"
+            assert parent in self.layouts, f"Parent container name not found: {parent}"
+            assert title not in self.params, "Widget name already exists: {title}"
             self.layouts[parent].addWidget(new_widget)
-
-    def add_tabs(self, title, tabs=['Tab1', 'Tab2']):
-        """Add tabs widget
-        Parameters:
-            :param title: str
-                A unique string ID for this group of tabs
-            :param tabs: list of str,
-                Names of tabs, e.g. ['Tab1', 'Tab2']
-        """
-        assert len(tabs) > 0, "Define the list of tab names (len > 1)"
-        assert title not in self.containers, f"Container name already exists:{title}"
-        for tab_name in tabs:
-            assert tab_name not in self.containers, "Container name already exists:" + tab_name + "\n"
-        new_widget = QTabWidget()
-        self.containers[title] = new_widget
-        self.layout_window.addWidget(new_widget)
-        for i in range(len(tabs)):
-            new_tab = QWidget()
-            self.containers[title].addTab(new_tab, tabs[i])
-            self.containers[tabs[i]] = new_tab
-            self.layouts[tabs[i]] = QFormLayout()
-            self.containers[tabs[i]].setLayout(self.layouts[tabs[i]])
 
     def add_numeric_field(self, title, parent,
                           value=0, vrange=[-1e6, 1e6, 1],
-                          enabled=True, func=None, **func_args):
-        """Add a QDoubleSpinBox() widget to the parent container widget (groupbox or tab).
+                          enabled=True, max_width=100,
+                          func=None, **func_args):
+        """Add a QDoubleSpinBox() widget to the parent container widget.
         Parameters
             :param title: str
                 Label of the parameter. Also, serves as system name of the widget. Beware of typos!
@@ -91,7 +97,7 @@ class ProtoKeks(QWidget):
         assert len(vrange) == 3, "The vrange parameter must be a list of 3 scalars: [min, max, step]."
         assert vrange[0] <= value <= vrange[1], "Value lies outside of (min,max) range."
         self.params[title] = QDoubleSpinBox()
-        self.params[title].setLocale(QLocale(QLocale.English, QLocale.UnitedStates)) # comma -> period: 0,1 -> 0.1
+        self.params[title].setLocale(PyQt5.QtCore.QLocale(PyQt5.QtCore.QLocale.English, PyQt5.QtCore.QLocale.UnitedStates)) # comma -> period: 0,1 -> 0.1
         step = vrange[2]
         self.params[title].setSingleStep(step)
         decimals = int(max(-np.floor(np.log10(step)), 0))
@@ -99,12 +105,14 @@ class ProtoKeks(QWidget):
         self.params[title].setRange(vrange[0], vrange[1])
         self.params[title].setValue(value)
         self.params[title].setEnabled(enabled)
+        self.params[title].setMaximumWidth(int(max_width))
+        self.params[title].setAlignment(PyQt5.QtCore.Qt.AlignRight)
         self.layouts[parent].addRow(title, self.params[title])
         if enabled and func is not None:
             self.params[title].editingFinished.connect(lambda: func(self.params[title].value(), **func_args))
             # editingFinished() preferred over valueChanged() because the latter is too jumpy, doesn't let finish input.
 
-    def add_string_field(self, title, parent, value='', enabled=True, func=None):
+    def add_string_field(self, title, parent, value='', enabled=True, func=None, max_width=100):
         """ Add a QLineEdit() widget to the parent container widget (groupbox or tab).
         :param title: str
                 Label of the parameter. Also, serves as system name of the widget. Beware of typos!
@@ -116,12 +124,16 @@ class ProtoKeks(QWidget):
             If True, user can edit value.
         :param func: function reference
                 Name of the function which must be called every time the value is changed.
+        :param nchars: int
+            min number of characters to display
         :return: None
         """
         assert parent in self.layouts, f"Parent container name not found: {parent}"
         assert title not in self.params, f"Widget name already exists: {title}"
         self.params[title] = QLineEdit(value)
         self.params[title].setEnabled(enabled)
+        self.params[title].setMaximumWidth(int(max_width))
+        self.params[title].setAlignment(PyQt5.QtCore.Qt.AlignRight)
         self.layouts[parent].addRow(title, self.params[title])
         if enabled and func is not None:
             self.params[title].editingFinished.connect(lambda: func(self.params[title].text()))
