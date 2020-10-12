@@ -179,18 +179,20 @@ class MotionController(QtCore.QObject):
         self.gui.add_numeric_field('Position, encoder',  # widget name
                                    'Position control',  # parent name
                                    value=self.position_encoder,
-                                   vmin=-1e6, vmax=1e6, enabled=False, decimals=0)
+                                   enabled=False)
         self.gui.add_numeric_field('Position, um',  # widget name
                                    'Position control',  # parent name
                                    value=self.position_um,
-                                   vmin=-25000, vmax=25000, enabled=False, decimals=2)
+                                   vrange=[-25000, 25000, 1e-2], enabled=False)
         self.gui.add_numeric_field('Step size, um',  # widget name
                                    'Position control',  # parent name
-                                   value=self.step_size_um, vmin=-25000, vmax=25000, decimals=1,
+                                   value=self.step_size_um,
+                                   vrange=[-25000, 25000, 0.1],
                                    func=self.set_step_um)
         self.gui.add_numeric_field('Target position, um',  # widget name
                                    'Position control',  # parent name
-                                   value=self.target_um, vmin=-25000, vmax=25000, decimals=1,
+                                   value=self.target_um,
+                                   vrange=[-25000, 25000, 0.1],
                                    func=self.set_target_um)
         self.gui.add_button('Connect',  # widget name
                             'Position control',  # parent name
