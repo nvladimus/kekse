@@ -1,0 +1,12 @@
+Package    Version
+---------- -------
+nidaqmx    0.5.7
+numpy      1.19.2
+pip        20.2.3
+PyDAQmx    1.4.3
+PyQt5      5.15.1
+PyQt5-sip  12.8.1
+pyqtgraph  0.11.0
+pyserial   3.4
+setuptools 39.0.1
+six        1.15.0
