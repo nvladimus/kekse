@@ -936,10 +936,14 @@ class HamamatsuCameraMR(HamamatsuCamera):
             print("max camera backlog was:", self.max_backlog)
         self.max_backlog = 0
 
+##################
+## GUI frontend ##
+##################
 
 import kekse
 import numpy as np
 import logging
+from functools import partial
 from PyQt5 import QtCore, QtWidgets
 from PyQt5.QtCore import pyqtSignal
 logging.basicConfig()
@@ -948,7 +952,7 @@ logging.basicConfig()
 class CamController(QtCore.QObject):
     sig_update_gui = pyqtSignal()
 
-    def __init__(self, dev_name='Hamamatsu Orca Flash4.3', gui_on=True, logger_name='Orca', simulation=False):
+    def __init__(self, dev_name='Hamamatsu Orca Flash4.3', gui_on=True, logger_name='Orca'):
         """High-level camera control with optional GUI frontend. By @nvladimus"""
         super().__init__()
         self.dev_handle = None
@@ -1162,10 +1166,21 @@ class CamController(QtCore.QObject):
         h1 = 9.74436E-3  # 1-row readout time, ms
         self.frame_readout_ms = ((vsize / 2.0) + 5) * h1
 
+    def update_config(self, key, value):
+        if key in self.config.keys():
+            self.config[key] = value
+            self.logger.info(f"changed {key} to {value}")
+        else:
+            self.logger.error("Parameter name not found in config file")
+        if self.gui_on:
+            self.sig_update_gui.emit()
+
     def _setup_gui(self):
         self.gui.add_tabs("Control Tabs", tabs=['Control', 'Trigger IN', 'Trigger OUT'])
         tab_name = 'Control'
-        self.gui.add_checkbox('Simulation', tab_name, self.config['simulation'], enabled=False)
+        self.gui.add_checkbox('Simulation', tab_name,
+                              value=self.config['simulation'],
+                              func=partial(self.update_config, 'simulation'))
 
         groupbox_name = 'Connection'
         self.gui.add_groupbox(title=groupbox_name, parent=tab_name)
@@ -1213,8 +1228,8 @@ class CamController(QtCore.QObject):
 
     @QtCore.pyqtSlot()
     def _update_gui(self):
-        self.gui.update_string_field('Status', self.status)
-        self.gui.update_numeric_field('Readout time, ms', self.frame_readout_ms)
+        self.gui.update_param('Status', self.status)
+        self.gui.update_param('Readout time, ms', self.frame_readout_ms)
 
 
 # run if the module is launched as a standalone program

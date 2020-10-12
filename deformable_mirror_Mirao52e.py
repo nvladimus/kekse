@@ -10,6 +10,7 @@ import logging
 import sys
 import os
 import numpy as np
+from functools import partial
 from PyQt5 import QtCore, QtWidgets
 from PyQt5.QtCore import pyqtSignal
 
@@ -213,11 +214,23 @@ class DmController(QtCore.QObject):
         errors[34] = 'MRO_FILE_IO_ENOMEM, Not enough memory. The operation requested cannot be performed because the process is out of memory.'
         errors[35] = 'MRO_FILE_IO_ENOSPC, No space left on device. A file cannot be written because the hard drive lacks of space.'
 
+    def update_config(self, key, value):
+        if key in self.config.keys():
+            self.config[key] = value
+            self.logger.info(f"changed {key} to {value}")
+        else:
+            self.logger.error("Parameter name not found in config file")
+        if self.gui_on:
+            self.sig_update_gui.emit()
+
     def _setup_gui(self):
         self.gui.add_tabs("Control Tabs", tabs=['Control', 'Config'])
         tab_name = 'Control'
         groupbox_name = 'Connection'
         self.gui.add_groupbox(title=groupbox_name, parent=tab_name)
+        self.gui.add_checkbox('Simulation', groupbox_name,
+                              value=self.config['simulation'],
+                              func=partial(self.update_config, 'simulation'))
         self.gui.add_button('Initialize', groupbox_name, lambda: self.initialize())
         self.gui.add_button('Disconnect', groupbox_name, lambda: self.close())
         self.gui.add_string_field('Status', groupbox_name, value=self.errors[self._status.value], enabled=False)
@@ -235,7 +248,7 @@ class DmController(QtCore.QObject):
 
     @QtCore.pyqtSlot()
     def _update_gui(self):
-        self.gui.update_string_field('Status', self.errors[self._status.value].split()[0])
+        self.gui.update_param('Status', self.errors[self._status.value].split()[0])
 
 
 # run if the module is launched as a standalone program
