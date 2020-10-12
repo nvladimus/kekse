@@ -257,20 +257,33 @@ class MotionController(QtCore.QObject):
         self.gui.add_checkbox('Simulation', tab_name, self.simulation, enabled=False)
         self.gui.add_button('Initialize', tab_name, lambda: self.initialize(self.port, self.baud, self.timeout_s))
         self.gui.add_string_field('Port', tab_name, value=self.port, func=self._set_port)
-        self.gui.add_numeric_field('Baud', tab_name, value=self.baud, func=self._set_baud, vmin=9600, vmax=115200)
+        self.gui.add_numeric_field('Baud', tab_name,
+                                   value=self.baud,
+                                   vrange=[9600, 115200, 200],
+                                   func=self._set_baud)
         self.gui.add_button('Disconnect', tab_name, func=self.close)
         # Position/speed controls
         tab_name = 'Motion'
         groupbox_name = 'Position'
         self.gui.add_groupbox(title=groupbox_name, parent=tab_name)
-        self.gui.add_numeric_field('X pos., mm',  groupbox_name, value=-1, enabled=False, decimals=5)
-        self.gui.add_numeric_field('Y pos., mm', groupbox_name,  value=-1, enabled=False, decimals=5)
+        self.gui.add_numeric_field('X pos., mm',  groupbox_name,
+                                   value=-1,
+                                   vrange=[-1e6, 1e6, 1e-5],
+                                   enabled=False)
+        self.gui.add_numeric_field('Y pos., mm', groupbox_name,
+                                   value=-1,
+                                   vrange=[-1e6, 1e6, 1e-5],
+                                   enabled=False)
         self.gui.add_button('Update position', groupbox_name, func=self.get_position)
         # Absolute move
         self.gui.add_numeric_field('Target X, mm', groupbox_name,
-                                   value=0, vmin=-25., vmax=25., decimals=5, func=self.set_target_x)
+                                   value=0,
+                                   vrange=[-25., 25., 1e-5],
+                                   func=self.set_target_x)
         self.gui.add_numeric_field('Target Y, mm', groupbox_name,
-                                   value=0, vmin=-25., vmax=25., decimals=5, func=self.set_target_y)
+                                   value=0,
+                                   vrange=[-25., 25., 1e-5],
+                                   func=self.set_target_y)
         self.gui.add_button('Move to target', groupbox_name,
                             lambda: self.move_abs((self.target_pos_x_mm, self.target_pos_y_mm)))
         self.gui.add_button('STOP', groupbox_name, func=self.halt)
@@ -279,35 +292,44 @@ class MotionController(QtCore.QObject):
         groupbox_name = 'Speed'
         self.gui.add_groupbox(title=groupbox_name, parent=tab_name)
         self.gui.add_numeric_field('Speed X, mm/s', groupbox_name,
-                                   value=self.speed_x, vmin=0, vmax=7.5, decimals=5,
+                                   value=self.speed_x,
+                                   vrange=[0, 7.5, 1e-5],
                                    func=self.set_speed, **{'axis': 'X'})
         self.gui.add_numeric_field('Speed Y, mm/s', groupbox_name,
-                                   value=self.speed_y, vmin=0, vmax=7.5, decimals=5,
+                                   value=self.speed_y,
+                                   vrange=[0, 7.5, 1e-5],
                                    func=self.set_speed, **{'axis': 'Y'})
 
         tab_name = 'Scanning'
         groupbox_name = 'Scan region'
         self.gui.add_groupbox(title=groupbox_name, parent=tab_name)
         self.gui.add_numeric_field('X start, mm', groupbox_name,
-                                   value=self.scan_limits_xx_yy[0], vmin=-25, vmax=25, decimals=4,
+                                   value=self.scan_limits_xx_yy[0],
+                                   vrange=[-25, 25, 1e-4],
                                    func=self.set_scan_region, **{'scan_boundary': 'x_start'})
         self.gui.add_numeric_field('X stop, mm', groupbox_name,
-                                   value=self.scan_limits_xx_yy[1], vmin=-25, vmax=25, decimals=4,
+                                   value=self.scan_limits_xx_yy[1],
+                                   vrange=[-25, 25, 1e-4],
                                    func=self.set_scan_region, **{'scan_boundary': 'x_stop'})
         self.gui.add_numeric_field('Y start, mm', groupbox_name,
-                                   value=self.scan_limits_xx_yy[2], vmin=-25, vmax=25, decimals=4,
+                                   value=self.scan_limits_xx_yy[2],
+                                   vrange=[-25, 25, 1e-4],
                                    func=self.set_scan_region, **{'scan_boundary': 'y_start'})
         self.gui.add_numeric_field('Y stop, mm', groupbox_name,
-                                   value=self.scan_limits_xx_yy[3], vmin=-25, vmax=25, decimals=4,
+                                   value=self.scan_limits_xx_yy[3],
+                                   vrange=[-25, 25, 1e-4],
                                    func=self.set_scan_region, **{'scan_boundary': 'y_stop'})
         self.gui.add_numeric_field('Trigger interval X, mm', groupbox_name,
-                                   value=self.pulse_intervals_x, vmin=0, vmax=25, decimals=5,
+                                   value=self.pulse_intervals_x,
+                                   vrange=[0, 25, 1e-5],
                                    func=self.set_trigger_intervals, **{'trigger_axis': 'X'})
         self.gui.add_numeric_field('Num. of lines', groupbox_name,
-                                   value=self.n_scan_lines, vmin=0, vmax=10000, decimals=0,
+                                   value=self.n_scan_lines,
+                                   vrange=[0, 10000, 1],
                                    func=self.set_n_scan_lines)
         self.gui.add_numeric_field('Backlash margin, mm', groupbox_name,
-                                   value=self.backlash_mm, vmin=0, vmax=0.05, decimals=3, enabled=False)
+                                   value=self.backlash_mm,
+                                   vrange=[0, 0.05, 1e-3], enabled=False)
         self.gui.add_button('Start scanning', groupbox_name, func=self.start_scan)
 
     @QtCore.pyqtSlot()

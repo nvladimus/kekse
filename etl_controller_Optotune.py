@@ -582,12 +582,14 @@ class ETL_controller(QtCore.QObject):
         self.gui.add_string_field('Port', parent_name, value=self.port, func=self.set_port)
         self.gui.add_string_field('Status', parent_name, value=self._status, enabled=False)
         self.gui.add_button('Initialize', parent_name, lambda: self.connect())
-        self.gui.add_numeric_field('Min current, mA', parent_name, value=self._current_lower,
-                                   vmin=-293, vmax=0, enabled=False, decimals=1)
+        self.gui.add_numeric_field('Min current, mA', parent_name,
+                                   value=self._current_lower,
+                                   vrange=[-293, 0, 0.1], enabled=False)
         self.gui.add_numeric_field('Max current, mA', parent_name, value=self._current_upper,
-                                   vmin=0, vmax=293, enabled=False, decimals=1)
-        self.gui.add_numeric_field('Current, mA', parent_name, value=self._current,
-                                   vmin=self._current_lower, vmax=self._current_upper, decimals=1,
+                                   vrange=[0, 293, 0.1], enabled=False)
+        self.gui.add_numeric_field('Current, mA', parent_name,
+                                   value=self._current,
+                                   vrange=[self._current_lower, self._current_upper, 0.1],
                                    func=self.set_current)
 
         self.gui.add_button('Disconnect', parent_name, lambda: self.close())

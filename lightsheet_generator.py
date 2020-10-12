@@ -220,30 +220,40 @@ class LightsheetGenerator(QtCore.QObject):
         self.gui.add_button('Initialize', tab_name, func=self.initialize)
         self.gui.add_string_field('Port', tab_name, value=self.config['arduino_switcher_port'], enabled=False)
         self.gui.add_string_field('Status', tab_name, value=self.status, enabled=False)
-        self.gui.add_numeric_field('Swipe duration', tab_name, value=self.config['swipe_duration_ms'],
-                                   vmin=0.1, vmax=100, decimals=1,
+        self.gui.add_numeric_field('Swipe duration', tab_name,
+                                   value=self.config['swipe_duration_ms'],
+                                   vrange=[0.1, 100, 0.1],
                                    func=partial(self.update_config, 'swipe_duration_ms'))
-        self.gui.add_numeric_field('L-arm galvo offset', tab_name, value=self.config['L-galvo_offsets_volts'],
-                                   vmin=-10, vmax=10, decimals=2,
+        self.gui.add_numeric_field('L-arm galvo offset', tab_name,
+                                   value=self.config['L-galvo_offsets_volts'],
+                                   vrange=[-10, 10, 0.01],
                                    func=partial(self.update_config, 'L-galvo_offsets_volts'))
-        self.gui.add_numeric_field('R-arm galvo offset', tab_name, value=self.config['R-galvo_offsets_volts'],
-                                   vmin=-10, vmax=10,  decimals=2,
+        self.gui.add_numeric_field('R-arm galvo offset', tab_name,
+                                   value=self.config['R-galvo_offsets_volts'],
+                                   vrange=[-10, 10, 0.01],
                                    func=partial(self.update_config, 'R-galvo_offsets_volts'))
-        self.gui.add_numeric_field('L-galvo amp (V)', tab_name, value=self.config['L-galvo_amp_volts'],
-                                   vmin=-1., vmax=1.,  decimals=2,
+        self.gui.add_numeric_field('L-galvo amp (V)', tab_name,
+                                   value=self.config['L-galvo_amp_volts'],
+                                   vrange=[-1., 1., 0.01],
                                    func=partial(self.update_config, 'L-galvo_amp_volts'))
-        self.gui.add_numeric_field('R-galvo amp (V)', tab_name, value=self.config['R-galvo_amp_volts'],
-                                   vmin=-1., vmax=1., decimals=2,
+        self.gui.add_numeric_field('R-galvo amp (V)', tab_name,
+                                   value=self.config['R-galvo_amp_volts'],
+                                   vrange=[-1., 1., 0.01],
                                    func=partial(self.update_config, 'R-galvo_amp_volts'))
-        self.gui.add_numeric_field('Laser power (V)', tab_name, value=self.config['laser_pow_volts'],
-                                   vmin=0, vmax=self.config['laser_max_volts'], decimals=2,
+        self.gui.add_numeric_field('Laser power (V)', tab_name,
+                                   value=self.config['laser_pow_volts'],
+                                   vrange=[0, self.config['laser_max_volts'], 0.01],
                                    func=partial(self.update_config, 'laser_pow_volts'))
-        self.gui.add_combobox('Active arm', tab_name, ['left', 'right'], value=self.config['active_arm'],
+        self.gui.add_combobox('Active arm', tab_name,
+                              value=self.config['active_arm'],
+                              items=['left', 'right'],
                               func=partial(self.update_config, 'active_arm'))
-        self.gui.add_numeric_field('Switch every N pulses', tab_name, value=self.config['switch_every_n_pulses'],
-                                   vmin=0, vmax=10000, decimals=0,
+        self.gui.add_numeric_field('Switch every N pulses', tab_name,
+                                   value=self.config['switch_every_n_pulses'],
+                                   vrange=[0, 10000, 1],
                                    func=partial(self.update_config, 'switch_every_n_pulses'))
-        self.gui.add_checkbox('Auto-switching', tab_name,  value=self.config['switch_auto'],
+        self.gui.add_checkbox('Auto-switching', tab_name,
+                              value=self.config['switch_auto'],
                               func=partial(self.update_config, 'switch_auto'))
         self.gui.add_button('Disconnect', tab_name, lambda: self.close())
 
@@ -252,7 +262,8 @@ class LightsheetGenerator(QtCore.QObject):
                                   value=self.config['DAQ_trig_in_ch'], enabled=False)
         self.gui.add_string_field('AO channels (galvo, laser)', tab_name,
                                   value=self.config['DAQ_AO_ch'], enabled=False)
-        self.gui.add_numeric_field('Sample rate, Hz', tab_name, value=self.config['DAQ_sample_rate_Hz'], enabled=False)
+        self.gui.add_numeric_field('Sample rate, Hz', tab_name,
+                                   value=self.config['DAQ_sample_rate_Hz'], enabled=False)
 
     @QtCore.pyqtSlot()
     def _update_gui(self):

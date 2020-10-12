@@ -65,7 +65,8 @@ class ProtoKeks(QWidget):
             self.layouts[tabs[i]] = QFormLayout()
             self.containers[tabs[i]].setLayout(self.layouts[tabs[i]])
 
-    def add_numeric_field(self, title, parent, value=0, vrange=[-1e6, 1e6, 1],
+    def add_numeric_field(self, title, parent,
+                          value=0, vrange=[-1e6, 1e6, 1],
                           enabled=True, func=None, **func_args):
         """Add a QDoubleSpinBox() widget to the parent container widget (groupbox or tab).
         Parameters
