@@ -10,11 +10,12 @@ import kekse
 import logging
 import sys
 import time
+from functools import partial
 from PyQt5 import QtCore, QtWidgets
 from PyQt5.QtCore import pyqtSignal
 
 config = {
-    'simulation': False,
+    'simulation': True,
     'port': "COM18",
     'baud': 9600,
     'timeout_s': 2.0,
@@ -36,7 +37,7 @@ class MotionController(QtCore.QObject):
         self.baud = config['baud']
         self.timeout_s = config['timeout_s']
         self.units = config['units_mm']
-        self.simulation = config['simulation']
+        self.config = config
         self.encoder_step_mm = config['encoder_step_mm']
         self.speed_x = self.speed_y = config['max_speed_mm/s']
         self.pulse_intervals_x = 0.01
@@ -64,7 +65,7 @@ class MotionController(QtCore.QObject):
         self.port = port
         self.baud = baud
         self.timeout_s = timeout_s
-        if not self.simulation:
+        if not self.config['simulation']:
             try:
                 self._ser = serial.Serial(self.port, self.baud, timeout=self.timeout_s)
                 self.logger.info(f"Connected to port {self.port}")
@@ -77,7 +78,7 @@ class MotionController(QtCore.QObject):
             self.logger.debug(f"Simulation: connected to port {self.port}")
 
     def get_position(self):
-        if not self.simulation:
+        if not self.config['simulation']:
             response = self.write_with_response(b'W X Y')
             if response[:2] == ":A" and len(response) >= 3:
                 words = response.split(" ")
@@ -90,7 +91,7 @@ class MotionController(QtCore.QObject):
             self.sig_update_gui.emit()
 
     def get_speed(self):
-        if not self.simulation:
+        if not self.config['simulation']:
             response = self.write_with_response(b"s x? y?")
             if response[:2] == ":A" and len(response) >= 3:
                 words = response.split(" ")
@@ -121,7 +122,7 @@ class MotionController(QtCore.QObject):
             self.logger.error("_flush(): serial port not initialized")
 
     def close(self):
-        if not self.simulation:
+        if not self.config['simulation']:
             try:
                 self._ser.close()
                 self.logger.info("closed")
@@ -153,7 +154,7 @@ class MotionController(QtCore.QObject):
             self.speed_y = speed_mms
         else:
             self.logger.error("set_speed(): argument axis must be /'X/' or /'Y/'")
-        if not self.simulation:
+        if not self.config['simulation']:
             response = self.write_with_response(f"S {axis}={speed_mms}".encode())
             if response[:2] != ":A":
                 self.logger.warning(f"set_speed() unexpected response: {response}")
@@ -184,7 +185,7 @@ class MotionController(QtCore.QObject):
                 self.enc_counts_per_pulse = round(interval_mm / self.encoder_step_mm)
             else:
                 self.logger.error("set_scan_region(): value of /'trigger_axis/' is invalid.")
-            if not self.simulation:
+            if not self.config['simulation']:
                 self._setup_scan()
             if self.gui_on:
                 self.sig_update_gui.emit()
@@ -205,7 +206,7 @@ class MotionController(QtCore.QObject):
                 self.scan_limits_xx_yy[3] = pos_mm
             else:
                 self.logger.error("set_scan_region(): value of /'scan_boundary/' is invalid.")
-            if not self.simulation:
+            if not self.config['simulation']:
                 self._setup_scan()
             else:
                 self.logger.debug("Simulation: set_scan_region().")
@@ -216,7 +217,7 @@ class MotionController(QtCore.QObject):
 
     def set_n_scan_lines(self, n):
         self.n_scan_lines = n
-        if not self.simulation:
+        if not self.config['simulation']:
             self._setup_scan()
         if self.gui_on:
             self.sig_update_gui.emit()
@@ -250,11 +251,22 @@ class MotionController(QtCore.QObject):
         response = self.write_with_response(b'\\')
         self.logger.info(f'halt() response: {response}')
 
+    def update_config(self, key, value):
+        if key in self.config.keys():
+            self.config[key] = value
+            self.logger.info(f"changed {key} to {value}")
+        else:
+            self.logger.error("Parameter name not found in config file")
+        if self.gui_on:
+            self.sig_update_gui.emit()
+
     def _setup_gui(self):
         self.gui.add_tabs("Control Tabs", tabs=['Connection', 'Motion', 'Scanning'])
         tab_name = 'Connection'
         # Connection controls
-        self.gui.add_checkbox('Simulation', tab_name, self.simulation, enabled=False)
+        self.gui.add_checkbox('Simulation', tab_name,
+                              value=self.config['simulation'],
+                              func=partial(self.update_config, 'simulation'))
         self.gui.add_button('Initialize', tab_name, lambda: self.initialize(self.port, self.baud, self.timeout_s))
         self.gui.add_string_field('Port', tab_name, value=self.port, func=self._set_port)
         self.gui.add_numeric_field('Baud', tab_name,
@@ -334,15 +346,15 @@ class MotionController(QtCore.QObject):
 
     @QtCore.pyqtSlot()
     def _update_gui(self):
-        self.gui.update_numeric_field('X pos., mm', self.position_x_mm)
-        self.gui.update_numeric_field('Y pos., mm', self.position_y_mm)
-        self.gui.update_numeric_field('Speed X, mm/s', self.speed_x)
-        self.gui.update_numeric_field('Speed Y, mm/s', self.speed_y)
-        self.gui.update_numeric_field('X start, mm', self.scan_limits_xx_yy[0])
-        self.gui.update_numeric_field('X stop, mm', self.scan_limits_xx_yy[1])
-        self.gui.update_numeric_field('Y start, mm', self.scan_limits_xx_yy[2])
-        self.gui.update_numeric_field('Y stop, mm', self.scan_limits_xx_yy[3])
-        self.gui.update_numeric_field('Trigger interval X, mm', self.pulse_intervals_x)
+        self.gui.update_param('X pos., mm', self.position_x_mm)
+        self.gui.update_param('Y pos., mm', self.position_y_mm)
+        self.gui.update_param('Speed X, mm/s', self.speed_x)
+        self.gui.update_param('Speed Y, mm/s', self.speed_y)
+        self.gui.update_param('X start, mm', self.scan_limits_xx_yy[0])
+        self.gui.update_param('X stop, mm', self.scan_limits_xx_yy[1])
+        self.gui.update_param('Y start, mm', self.scan_limits_xx_yy[2])
+        self.gui.update_param('Y stop, mm', self.scan_limits_xx_yy[3])
+        self.gui.update_param('Trigger interval X, mm', self.pulse_intervals_x)
 
 
 # run if the module is launched as a standalone program
