@@ -16,7 +16,6 @@ similar to LabView virtual instruments.
 
 (optional) Create and activate local environment from the command line, to keep things tidy
 ```
-C:\Users\user\kekse> cd kekse
 C:\Users\user\kekse> python -m venv venv
 C:\Users\user\kekse> venv\Scripts\activate.bat
 (venv) C:\Users\user\kekse>
@@ -37,9 +36,9 @@ Explore the code and make your own kekse.
 Kekse allows simplified GUI generation via thin abstraction class `keks.ProtoKeks()` that hides the full details of PyQt5 API. 
 
 To create your own keks, a good starting point is looking into the template code in [device_template.py](device_template.py). The basic steps are:
-- Create a device class that contains functionality (opening/closing, communication, etc): `class Device(QtCore.QObject):`
+- Create a class that contains device functionality (communication, etc): `class Device(QtCore.QObject):`
 - Create the main GUI widget: `self.gui = kekse.ProtoKeks()`
-- Populate the GUI with containers (tabs, groupboxes) and controls (numeric fields, buttons, labels, etc)
+- Populate the main widget with containers (tabs, groupboxes) and controls (numeric fields, buttons, labels, etc)
 ```
 self.gui.add_tabs('Control Tabs', tabs=['Tab 0', 'Tab 1'])
 self.gui.add_button('Initialize', parent='Tab 0', func=self.initialize) 
@@ -51,9 +50,9 @@ self.gui.add_numeric_field('Parameter 0', parent='Groupbox 0',
                            vrange=[0, 100, 0.01], # [min, max, step]
                            func=self.do_something)
 ```
-In the code above, `add_button('Initialize', 'Tab 0', func=self.initialize)` creates a button named *and* labeled `Initialize`, which belongs to parent widget `Tab 0`, and when the button is clicked, function `self.initialize()` is executed.
+In the code above, `add_button('Initialize', 'Tab 0', func=self.initialize)` creates a button named *and* labeled `'Initialize'`, which belongs to parent widget `'Tab 0'`, and every time the button is clicked, function `self.initialize()` is executed.
 
-Every new widget is added to the main window (if `parent=None`), or to the `parent` container. Again, all containers and widgets are referred by their titles (strings), e.g. as `Tab 0`. So, keep an eye on the blank spaces in th titles.
+Every new widget is added to the main window (if `parent=None`), or to the `parent` container. Again, all containers and widgets are referred by their titles (strings), so keep an eye on the blank spaces.
 
 ![Device template GUI](./images/dev_template.png)
 
@@ -66,7 +65,7 @@ dev0.do_something()
 ```
 
 ## Limitations
-- Kekse provide only a simplified interface to PyQt for rapid GUI building. The number of widget types and their formatting are very limited for simplicity. If you would like more advanced and professionally looking GUI, consider using full PyQt or [pyqtgraph](http://www.pyqtgraph.org/).
+- Kekse provide only a simplified interface to PyQt5 for rapid GUI building. The number of widget types and their formatting are very limited. If you would like more advanced and professionally looking GUI, consider using full PyQt or [pyqtgraph](http://www.pyqtgraph.org/).
 - Only `QFormLayout()` is supported: widgets added in one column, in the order they are written in the code.
 - There are no assumptions about device functionality, it is entirely upon the user.
 
