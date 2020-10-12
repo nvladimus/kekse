@@ -6,6 +6,11 @@ __pycache__/
 .idea/*
 ini_test.ipynb
 
+# device drivers
+*.dll
+*.lib
+*.h
+
 # C extensions
 *.so
 

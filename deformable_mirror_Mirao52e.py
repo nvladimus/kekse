@@ -16,8 +16,8 @@ from PyQt5.QtCore import pyqtSignal
 
 config = {
     'simulation': True,
-    'dll_path': "./src/deformable_mirror/mirao52e.dll",
-    'flat_file': './src/deformable_mirror/flat.mro'}
+    'dll_path': "./drivers/mirao52_x64/mirao52e.dll",
+    'flat_file': './drivers/mirao52_x64/flat.mro'}
 logging.basicConfig()
 
 
@@ -43,7 +43,6 @@ class DmController(QtCore.QObject):
         self._trigger = ctypes.c_int64()
         self.logger = logging.getLogger(logger_name)
         self.logger.setLevel(logging.DEBUG)
-        self.check_files()
         # GUI setup
         self.gui_on = gui_on
         if self.gui_on:
@@ -69,7 +68,8 @@ class DmController(QtCore.QObject):
                     self.logger.error(f"Flat-command file does not exist at {self.dll_path}.")
 
     def initialize(self):
-        """Open deformable mirror session"""
+        """Open a deformable mirror session"""
+        self.check_files()
         if self.dev_handle is not None:
             try:
                 self.dev_handle.mro_open(ctypes.byref(self._status))
