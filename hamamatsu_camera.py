@@ -936,7 +936,8 @@ class HamamatsuCameraMR(HamamatsuCamera):
             print("max camera backlog was:", self.max_backlog)
         self.max_backlog = 0
 
-import widget as wd
+
+import kekse
 import numpy as np
 import logging
 from PyQt5 import QtCore, QtWidgets
@@ -967,7 +968,7 @@ class CamController(QtCore.QObject):
         self.gui_on = gui_on
         if self.gui_on:
             self.logger.debug("Camera GUI on")
-            self.gui = wd.widget(dev_name)
+            self.gui = kekse.ProtoKeks(dev_name)
             self._setup_gui()
             self.sig_update_gui.connect(self._update_gui)
 

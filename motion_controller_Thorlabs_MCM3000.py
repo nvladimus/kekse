@@ -8,7 +8,7 @@ Copyright Nikita Vladimirov, @nvladimus 2020
 import serial
 import struct
 import sys
-import widget as wd
+import kekse
 from PyQt5 import QtCore, QtWidgets
 from PyQt5.QtCore import pyqtSignal
 
@@ -36,7 +36,7 @@ class MotionController(QtCore.QObject):
         self.target_um = 0.0
         self.set_stage_model(self.model_stage)
         # GUI
-        self.gui = wd.widget(self.model_controller)
+        self.gui = kekse.ProtoKeks(self.model_controller)
         self._setup_gui()
         # signals
         self.sig_update_gui.connect(self._update_gui)

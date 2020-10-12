@@ -6,7 +6,7 @@ Copyright Nikita Vladimirov @nvladimus 2020
 Todo: add output triggers
 """
 import serial
-import widget as wd
+import kekse
 import logging
 import sys
 import time
@@ -56,7 +56,7 @@ class MotionController(QtCore.QObject):
         self.gui_on = gui_on
         if self.gui_on:
             self.logger.info("GUI activated")
-            self.gui = wd.widget(dev_name)
+            self.gui = kekse.ProtoKeks(dev_name)
             self._setup_gui()
             self.sig_update_gui.connect(self._update_gui)
 

@@ -4,11 +4,12 @@ Copyright Nikita Vladimirov, @nvladimus 2020
 """
 
 from PyQt5.QtWidgets import (QGroupBox, QLineEdit, QPushButton, QTabWidget, QCheckBox, QComboBox,
-                             QVBoxLayout, QWidget, QDoubleSpinBox, QFormLayout)
+                             QVBoxLayout, QWidget, QDoubleSpinBox, QFormLayout, QLabel)
 from PyQt5.QtCore import QLocale
+import numpy as np
 
 
-class widget(QWidget):
+class ProtoKeks(QWidget):
     """Base class for GUI widgets."""
     def __init__(self, title='Control window'):
         """
@@ -51,7 +52,7 @@ class widget(QWidget):
                 Names of tabs, e.g. ['Tab1', 'Tab2']
         """
         assert len(tabs) > 0, "Define the list of tab names (len > 1)"
-        assert title not in self.containers, "Container name already exists:" + title + "\n"
+        assert title not in self.containers, f"Container name already exists:{title}"
         for tab_name in tabs:
             assert tab_name not in self.containers, "Container name already exists:" + tab_name + "\n"
         new_widget = QTabWidget()
@@ -64,8 +65,8 @@ class widget(QWidget):
             self.layouts[tabs[i]] = QFormLayout()
             self.containers[tabs[i]].setLayout(self.layouts[tabs[i]])
 
-    def add_numeric_field(self, title, parent, value=0, vmin=-1e6, vmax=1e6,
-                          enabled=True, decimals=0, func=None, **func_args):
+    def add_numeric_field(self, title, parent, value=0, vrange=[-1e6, 1e6, 1],
+                          enabled=True, func=None, **func_args):
         """Add a QDoubleSpinBox() widget to the parent container widget (groupbox or tab).
         Parameters
             :param title: str
@@ -73,19 +74,28 @@ class widget(QWidget):
             :param parent: str
                 Name of the parent container
             :param value: float
-                Initial value of the field.
+                Initial value.
+            :param: vrange: list of 3 scalars
+                List of [minimum, maximum, step] values, e.g. [0, 100, 1]. Default [-1e6, 1e6, 1].
+            :param enabled: Boolean
+                If True, the value can be edited. If False, it is grayed out.
             :param func: function reference
                 Name of the function which must be called every time the value is changed.
             :param: **func_args:
                 Function's additional key-value parameters (dictionary), besides the field value.
+            :return: None
         """
-        assert parent in self.layouts, "Parent container name not found: " + parent + "\n"
-        assert title not in self.params, "Widget name already exists: " + title + "\n"
+        assert parent in self.layouts, f"Parent container name not found: {parent}"
+        assert title not in self.params, f"Widget name already exists: {title}"
+        assert len(vrange) == 3, "The vrange parameter must be a list of 3 scalars: [min, max, step]."
+        assert vrange[0] <= value <= vrange[1], "Value lies outside of (min,max) range."
         self.params[title] = QDoubleSpinBox()
         self.params[title].setLocale(QLocale(QLocale.English, QLocale.UnitedStates)) # comma -> period: 0,1 -> 0.1
+        step = vrange[2]
+        self.params[title].setSingleStep(step)
+        decimals = int(max(-np.floor(np.log10(step)), 0))
         self.params[title].setDecimals(decimals)
-        self.params[title].setSingleStep(1. / 10 ** decimals)
-        self.params[title].setRange(vmin, vmax)
+        self.params[title].setRange(vrange[0], vrange[1])
         self.params[title].setValue(value)
         self.params[title].setEnabled(enabled)
         self.layouts[parent].addRow(title, self.params[title])
@@ -107,13 +117,19 @@ class widget(QWidget):
                 Name of the function which must be called every time the value is changed.
         :return: None
         """
-        assert parent in self.layouts, "Parent container name not found: " + parent + "\n"
-        assert title not in self.params, "Widget name already exists: " + title + "\n"
+        assert parent in self.layouts, f"Parent container name not found: {parent}"
+        assert title not in self.params, f"Widget name already exists: {title}"
         self.params[title] = QLineEdit(value)
         self.params[title].setEnabled(enabled)
         self.layouts[parent].addRow(title, self.params[title])
         if enabled and func is not None:
             self.params[title].editingFinished.connect(lambda: func(self.params[title].text()))
+
+    def add_label(self, title, parent):
+        assert parent in self.layouts, f"Parent container name not found: {parent}"
+        assert title not in self.params, f"Widget name already exists: {title}"
+        self.params[title] = QLabel(title)
+        self.layouts[parent].addRow(self.params[title])
 
     def add_button(self, title, parent, func):
         """Add a button to a parent container widget (groupbox or tab).
@@ -176,19 +192,16 @@ class widget(QWidget):
             self.params[title].currentTextChanged.connect(lambda: func(self.params[title].currentText()))
         self.layouts[parent].addRow(title, self.params[title])
 
-    def update_numeric_field(self, title, value):
-        """"Deprecated"""
-        assert title in self.params, "Numeric field not found: " + title + "\n"
-        self.params[title].setValue(value)
-
-    def update_string_field(self, title, text):
-        """"Deprecated"""
-        assert title in self.params, "Text field not found: " + title + "\n"
-        self.params[title].setText(text)
-
     def update_param(self, title, value):
+        """"Update parameter value, for numeric or string parameter."""
         assert title in self.params, f"{title} field not found"
         if isinstance(self.params[title], QDoubleSpinBox):
             self.params[title].setValue(value)
         elif isinstance(self.params[title], QLineEdit):
             self.params[title].setText(value)
+
+    def get_param(self, title):
+        """"Get direct access to the parameter widget using its title"""
+        assert title in self.params, f"{title} parameter not found"
+        return self.params[title]
+

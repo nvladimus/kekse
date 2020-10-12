@@ -1,12 +1,11 @@
 """
-Todo: test on hardware. This version is not tested yet!
 Module for controlling deformable mirror Mirao 52e (Imaging Optics)
 License GPL-3.0
 by @nvladimus, 2020
 """
 
 import ctypes
-import widget as wd
+import kekse
 import logging
 import sys
 import os
@@ -48,7 +47,7 @@ class DmController(QtCore.QObject):
         self.gui_on = gui_on
         if self.gui_on:
             self.logger.debug("DM GUI on")
-            self.gui = wd.widget(dev_name)
+            self.gui = kekse.ProtoKeks(dev_name)
             self._setup_gui()
             self.sig_update_gui.connect(self._update_gui)
 

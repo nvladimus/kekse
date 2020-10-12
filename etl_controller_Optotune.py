@@ -1,7 +1,7 @@
 import serial
 import time
 from ctypes import c_ushort
-import widget as wd
+import kekse
 from PyQt5 import QtCore
 from PyQt5.QtCore import pyqtSignal
 import logging
@@ -37,7 +37,7 @@ class ETL_controller(QtCore.QObject):
         # GUI
         self.gui_on = gui_on
         if self.gui_on:
-            self.gui = wd.widget("Optotune ETL")
+            self.gui = kekse.ProtoKeks("Optotune ETL")
             self.logger.debug("ETL GUI on")
             self._setup_gui()
             # signals

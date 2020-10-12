@@ -5,15 +5,16 @@ Copyright @nvladimus, 2020
 from PyQt5 import QtCore, QtWidgets
 import sys
 import logging
-import widget as wd
+import kekse
 from functools import partial
 logging.basicConfig()
 
 config = {
-    'param1': 1.0,  # numerical parameter
-    'param2': 'string',  # string parameter
-    'param3_check': True,  # checkbox
-    'param4combo': 'option1'  # combobox parameter
+    'param0': 1.0,  # a numeric parameter
+    'param1': 2.0,  # a numeric parameter
+    'param2': 'a string',  # a string parameter
+    'param_checkbox': True,  # a checkbox
+    'param_combobox': ['option0', ['option0', 'option1']]  # a combobox: selected option and list of all options
 }
 
 
@@ -24,6 +25,7 @@ class Device(QtCore.QObject):
         super().__init__()
         self.config = config
         self.initialized = False
+        self._status = 'not initialized'
         # logger setup
         self.logger_name = logger_name
         self.logger = logging.getLogger(logger_name)
@@ -32,15 +34,24 @@ class Device(QtCore.QObject):
         self.gui_on = gui_on
         if self.gui_on:
             self.logger.info("GUI activated")
-            self.gui = wd.widget(dev_name)
+            self.gui = kekse.ProtoKeks(dev_name)
             self._setup_gui()
             self.sig_update_gui.connect(self._update_gui)
 
     def initialize(self):
-        self.logger.info('Initialized')
+        if not self.initialized:
+            self.initialized = True
+            self._status = 'connected'
+            self.logger.info('Initialized')
+        if self.gui_on:
+            self.sig_update_gui.emit()
 
     def close(self):
+        self._status = 'closed'
+        self.initialized = False
         self.logger.info('Closed')
+        if self.gui_on:
+            self.sig_update_gui.emit()
 
     def do_something(self):
         self.logger.info('Did something')
@@ -55,24 +66,33 @@ class Device(QtCore.QObject):
             self.sig_update_gui.emit()
 
     def _setup_gui(self):
-        self.gui.add_tabs("Control Tabs", tabs=['Tab 1', 'Tab 2'])
-        tab_name = 'Tab 1'
-        self.gui.add_button('Initialize', tab_name, func=self.initialize)
-        self.gui.add_numeric_field('Parameter 1', tab_name, value=self.config['param1'],
-                                   vmin=0.1, vmax=100, decimals=1,
+        self.gui.add_tabs("Control Tabs", tabs=['Tab 0', 'Tab 1'])
+        self.gui.add_button('Initialize', 'Tab 0', func=self.initialize)
+        self.gui.add_string_field('Status', 'Tab 0', value=self._status, enabled=False)
+        self.gui.add_groupbox("Groupbox 0", 'Tab 0')
+        container_title = "Groupbox 0"
+        self.gui.add_label("This is just a label", container_title)
+        self.gui.add_numeric_field('Parameter 0', container_title, value=self.config['param1'],
+                                   vrange=[0, 100, 0.1],
+                                   func=partial(self.update_config, 'param0'))
+        self.gui.add_numeric_field('Parameter 1', container_title, value=self.config['param1'],
+                                   vrange=[-100, 100, 1],
                                    func=partial(self.update_config, 'param1'))
-        self.gui.add_string_field('Parameter 2', tab_name, value=self.config['param2'], enabled=False)
-        self.gui.add_checkbox('Parameter 3', tab_name,  value=self.config['param3_check'],
-                              func=partial(self.update_config, 'param3_check'))
-        self.gui.add_combobox('Parameter 4', tab_name, items=['option1', 'option2'],
-                              value=self.config['param4combo'], func=partial(self.update_config, 'param4combo'))
-        self.gui.add_button('Disconnect', tab_name, lambda: self.close())
+        self.gui.add_string_field('Parameter 2', container_title,
+                                  value=self.config['param2'],
+                                  func=partial(self.update_config, 'param2'))
+        self.gui.add_checkbox('Parameter 3', container_title,  value=self.config['param_checkbox'],
+                              func=partial(self.update_config, 'param_checkbox'))
+        self.gui.add_combobox('Parameter 4', container_title,
+                              value=self.config['param_combobox'][0], # initial value
+                              items=self.config['param_combobox'][1], # available options
+                              func=partial(self.update_config, 'param_combobox'))
+        self.gui.add_button('Do something', container_title, func=self.do_something)
+        self.gui.add_button('Disconnect', 'Tab 0', func=self.close)
 
     @QtCore.pyqtSlot()
     def _update_gui(self):
-        self.gui.update_param('Parameter 1', self.config['param1'])
-        self.gui.update_param('Parameter 3', self.config['param3_check'])
-        self.gui.update_param('Parameter 4', self.config['param4combo'])
+        self.gui.update_param('Status', self._status)
         self.logger.info('GUI updated')
 
 

@@ -10,7 +10,7 @@ import logging
 import numpy as np
 import PyDAQmx as pd
 import ctypes as ct
-import widget as wd
+import kekse
 import serial
 from functools import partial
 
@@ -51,7 +51,7 @@ class LightsheetGenerator(QtCore.QObject):
         self.gui_on = gui_on
         if self.gui_on:
             self.logger.info("GUI activated")
-            self.gui = wd.widget(dev_name)
+            self.gui = kekse.ProtoKeks(dev_name)
             self._setup_gui()
             self.sig_update_gui.connect(self._update_gui)
 
