@@ -49,12 +49,12 @@ In the code above, `add_button('Initialize', 'Tab 0', func=self.initialize)` cre
 labeled `'Initialize'`, which belongs to parent widget `'Tab 0'`, and every time the button is 
 clicked, function `self.initialize()` is executed.
 
-Every new widget is added to the main window (if `parent=None`), or to the `parent` container.
+Each new widget is added column-wise to the main window (if `parent=None`), or to the `parent` container.
+
+![Device template GUI](./images/dev_template.png)
 
  All visible GUI parameters are referred by their titles,
  eg `self.gui.update_param('Parameter 0', 42)` will change the numeric field `'Parameter 0'` to 42.
-
-![Device template GUI](./images/dev_template.png)
 
 ### Keks usage
 Keks is just a Python class, and all its methods are accessible from a master program that created the keks object. So, the master program can call any keks function:
