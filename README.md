@@ -57,7 +57,7 @@ Each new widget is added as a new row in the main window (`parent=None`), or in 
 ![Device template GUI](./images/dev_template.png)
 
  All visible GUI parameters are referred by their visible *titles*,
- eg `self.gui.update_param('Parameter 0', 42)` will change the numeric field `'Parameter 0'` to 42.
+ eg `self.gui.update_param('Parameter 0', 42)` will change `'Parameter 0'` to 42.
 
 ### Keks usage
 Keks is just a Python class, and all its methods are accessible from a master program that created the keks object. So, the master program can call any keks function:
