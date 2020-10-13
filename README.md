@@ -50,7 +50,7 @@ a button *titled* `'Initialize'`, which belongs to parent widget `'Tab 0'`, and 
 clicked, function `self.initialize()` is executed.
 
 For the parameter titled `'Parameter 0'`, function `self.do_something(x)` is 
-called every time the parameter is changed by the user, argument `x` being the new parameter value.
+called every time the parameter is changed by the user, argument `x` is the new parameter value.
 
 Each new widget is added as a new row in the main window (`parent=None`), or in the `parent` container.
 
