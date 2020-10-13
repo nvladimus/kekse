@@ -23,7 +23,7 @@ class ProtoKeks(QWidget):
         self.layouts = {}
         self.layout_window = QVBoxLayout(self)
 
-    def _insert_widget(self, title, parent, container=False):
+    def _insert_widget(self, title, parent, container=False, label=False):
         if parent is None:
             if container:
                 self.layout_window.addWidget(self.containers[title])
@@ -34,7 +34,10 @@ class ProtoKeks(QWidget):
             if container:
                 self.layouts[parent].addWidget(self.containers[title])
             else:
-                self.layouts[parent].addRow(self.params[title])
+                if label:
+                    self.layouts[parent].addRow(title, self.params[title])
+                else:
+                    self.layouts[parent].addRow(self.params[title])
 
     def add_tabs(self, title, tabs=['Tab1', 'Tab2'], parent=None):
         """Add a tabs container.
@@ -107,7 +110,7 @@ class ProtoKeks(QWidget):
         self.params[title].setEnabled(enabled)
         self.params[title].setMaximumWidth(int(max_width))
         self.params[title].setAlignment(PyQt5.QtCore.Qt.AlignRight)
-        self._insert_widget(title, parent)
+        self._insert_widget(title, parent, label=True)
         if enabled and func is not None:
             self.params[title].editingFinished.connect(lambda: func(self.params[title].value(), **func_args))
             # editingFinished() preferred over valueChanged() because the latter is too jumpy, doesn't let finish input.
@@ -134,7 +137,7 @@ class ProtoKeks(QWidget):
         self.params[title].setEnabled(enabled)
         self.params[title].setMaximumWidth(int(max_width))
         self.params[title].setAlignment(PyQt5.QtCore.Qt.AlignRight)
-        self._insert_widget(title, parent)
+        self._insert_widget(title, parent, label=True)
         if enabled and func is not None:
             self.params[title].editingFinished.connect(lambda: func(self.params[title].text()))
 
@@ -202,7 +205,7 @@ class ProtoKeks(QWidget):
         self.params[title].setCurrentText(value)
         if enabled and func is not None:
             self.params[title].currentTextChanged.connect(lambda: func(self.params[title].currentText()))
-        self._insert_widget(title, parent)
+        self._insert_widget(title, parent, label=True)
 
     def update_param(self, title, value):
         """"Update parameter value, for numeric or string parameter."""
