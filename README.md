@@ -60,17 +60,24 @@ labeled `'Initialize'`, which belongs to parent widget `'Tab 0'`, and every time
 clicked, function `self.initialize()` is executed.
 
 Every new widget is added to the main window (if `parent=None`), or to the `parent` container.
- Again, all containers and widgets are referred by their titles which are strings, so keep an eye on the blank spaces.
+ Again, all containers and widgets are referred by their titles, which are strings.
 
 ![Device template GUI](./images/dev_template.png)
 
 ### Keks usage
 Keks is just a Python class, and all its methods are accessible from a master program that created the keks object. So, the master program can call any keks function:
 ```
-dev0 = dev_template.Device()
-dev0.gui.show()
-dev0.do_something()
+import devices 
+dev = devices.device_template.Device()
+dev.gui.show()
+dev.do_something()
 ```
+For a quick test of device functions, call your keks from the command line:
+```
+python -m devices.device_template
+```
+Here, `devices` is a subfolder organized as package for better code structure. 
+You can take individual module files out and reuse them, they are independent from each other.
 
 ## Current limitations
 - Kekse provide only a simplified interface to PyQt5 for rapid GUI building. 
