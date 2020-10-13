@@ -45,15 +45,15 @@ self.gui.add_numeric_field('Parameter 0', parent='Groupbox 0',
                            vrange=[0, 100, 0.01], # [min, max, step]
                            func=self.do_something)
 ```
-In the code above, `add_button('Initialize', 'Tab 0', func=self.initialize)` creates a button named *and* 
-labeled `'Initialize'`, which belongs to parent widget `'Tab 0'`, and every time the button is 
+In the code above, `add_button('Initialize', 'Tab 0', func=self.initialize)` creates 
+a button *titled* `'Initialize'`, which belongs to parent widget `'Tab 0'`, and every time the button is 
 clicked, function `self.initialize()` is executed.
 
 Each new widget is added column-wise to the main window (if `parent=None`), or to the `parent` container.
 
 ![Device template GUI](./images/dev_template.png)
 
- All visible GUI parameters are referred by their titles,
+ All visible GUI parameters are referred by their visible *titles*,
  eg `self.gui.update_param('Parameter 0', 42)` will change the numeric field `'Parameter 0'` to 42.
 
 ### Keks usage
