@@ -77,6 +77,3 @@ If you would like more advanced and professionally looking GUI, consider using f
 
 ## Advanced control
 The [daoSPIM](https://github.com/nvladimus/daoSPIM/tree/master/microscope_control) project uses kekse connected together for microscope control, with signals/slots and multithreading.
-
-## ToDo
-After some more testing, `pip install kekse` will become available.
