@@ -50,7 +50,9 @@ labeled `'Initialize'`, which belongs to parent widget `'Tab 0'`, and every time
 clicked, function `self.initialize()` is executed.
 
 Every new widget is added to the main window (if `parent=None`), or to the `parent` container.
- Again, all containers and widgets are referred by their titles, which are strings.
+
+ All visible GUI parameters are referred by their titles,
+ eg `self.gui.update_param('Parameter 0', 42)` will change the numeric field `'Parameter 0'` to 42.
 
 ![Device template GUI](./images/dev_template.png)
 
