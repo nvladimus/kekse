@@ -49,6 +49,9 @@ In the code above, `add_button('Initialize', 'Tab 0', func=self.initialize)` cre
 a button *titled* `'Initialize'`, which belongs to parent widget `'Tab 0'`, and every time the button is 
 clicked, function `self.initialize()` is executed.
 
+For the parameter titled `'Parameter 0'`, function `self.do_something(x)` is 
+called every time the parameter is changed by the user, argument `x` being the new parameter value.
+
 Each new widget is added as a new row in the main window (`parent=None`), or in the `parent` container.
 
 ![Device template GUI](./images/dev_template.png)
