@@ -49,7 +49,7 @@ In the code above, `add_button('Initialize', 'Tab 0', func=self.initialize)` cre
 a button *titled* `'Initialize'`, which belongs to parent widget `'Tab 0'`, and every time the button is 
 clicked, function `self.initialize()` is executed.
 
-Each new widget is added column-wise to the main window (if `parent=None`), or to the `parent` container.
+Each new widget is added as a new row in the main window (`parent=None`), or in the `parent` container.
 
 ![Device template GUI](./images/dev_template.png)
 
