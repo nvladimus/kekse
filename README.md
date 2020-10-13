@@ -41,8 +41,8 @@ self.gui.add_string_field('Status', parent='Tab 0', value=self._status, enabled=
 self.gui.add_groupbox('Groupbox 0', parent='Tab 0')
 self.gui.add_label('This is just a label', parent='Groupbox 0')
 self.gui.add_numeric_field('Parameter 0', parent='Groupbox 0',
-                           value=3.14, # Initial value
-                           vrange=[0, 100, 0.01], # [min, max, step]
+                           value=1.0, # Initial value
+                           vrange=[0, 100, 0.1], # [min, max, step]
                            func=self.do_something)
 ```
 In the code above, `add_button('Initialize', 'Tab 0', func=self.initialize)` creates 

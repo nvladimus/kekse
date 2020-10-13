@@ -10,7 +10,7 @@ from functools import partial
 logging.basicConfig()
 
 config = {
-    'Parameter 0': [1.0, [0, 100, 0.1]],  # [value, [min, max, step]]
+    'Parameter 0': [3.14, [0, 100, 0.01]],  # [value, [min, max, step]]
     'Parameter 1': [0, [-1e6, 1e6, 10]],  # [value, [min, max, step]]
     'Parameter String': ['a string', True],  # a string parameter: [value, enabled?]
     'Param Checkbox': True,  # a checkbox
