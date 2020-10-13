@@ -23,6 +23,19 @@ class ProtoKeks(QWidget):
         self.layouts = {}
         self.layout_window = QVBoxLayout(self)
 
+    def _insert_widget(self, title, parent, container=False):
+        if parent is None:
+            if container:
+                self.layout_window.addWidget(self.containers[title])
+            else:
+                self.layout_window.addWidget(self.params[title])
+        else:
+            assert parent in self.layouts, f"Parent container name not found: {parent}"
+            if container:
+                self.layouts[parent].addWidget(self.containers[title])
+            else:
+                self.layouts[parent].addRow(self.params[title])
+
     def add_tabs(self, title, tabs=['Tab1', 'Tab2'], parent=None):
         """Add a tabs container.
         Parameters:
@@ -35,21 +48,15 @@ class ProtoKeks(QWidget):
         assert title not in self.containers, f"Container name already exists:{title}"
         for tab_name in tabs:
             assert tab_name not in self.containers, f"Container name already exists:{tab_name}"
-        new_widget = QTabWidget()
-        self.containers[title] = new_widget
-        if parent is None:
-            self.layout_window.addWidget(new_widget)
-        else:
-            assert parent in self.layouts, f"Parent container name not found: {parent}"
-            assert title not in self.params, f"Widget name already exists: {title}"
-            self.layouts[parent].addWidget(new_widget)
+        self.containers[title] = QTabWidget()
+        self._insert_widget(title, parent, container=True)
         for i in range(len(tabs)):
             new_tab = QWidget()
             self.containers[title].addTab(new_tab, tabs[i])
             self.containers[tabs[i]] = new_tab
             self.layouts[tabs[i]] = QFormLayout()
             self.containers[tabs[i]].setLayout(self.layouts[tabs[i]])
-            
+
     def add_groupbox(self, title='Group 1', parent=None):
         """ Add a groupbox container.
         Parameters
@@ -59,16 +66,10 @@ class ProtoKeks(QWidget):
                 to the main window.
         """
         assert title not in self.containers, "Container name already exists"
-        new_widget = QGroupBox(title)
-        self.containers[title] = new_widget
+        self.containers[title] = QGroupBox(title)
         self.layouts[title] = QFormLayout()
         self.containers[title].setLayout(self.layouts[title])
-        if parent is None:
-            self.layout_window.addWidget(new_widget)
-        else:
-            assert parent in self.layouts, f"Parent container name not found: {parent}"
-            assert title not in self.params, "Widget name already exists: {title}"
-            self.layouts[parent].addWidget(new_widget)
+        self._insert_widget(title, parent, container=True)
 
     def add_numeric_field(self, title, parent=None,
                           value=0, vrange=[-1e6, 1e6, 1],
@@ -106,12 +107,7 @@ class ProtoKeks(QWidget):
         self.params[title].setEnabled(enabled)
         self.params[title].setMaximumWidth(int(max_width))
         self.params[title].setAlignment(PyQt5.QtCore.Qt.AlignRight)
-        if parent is None:
-            self.layout_window.addRow(title, self.params[title])
-        else:
-            assert parent in self.layouts, f"Parent container name not found: {parent}"
-            self.layouts[parent].addRow(title, self.params[title])
-
+        self._insert_widget(title, parent)
         if enabled and func is not None:
             self.params[title].editingFinished.connect(lambda: func(self.params[title].value(), **func_args))
             # editingFinished() preferred over valueChanged() because the latter is too jumpy, doesn't let finish input.
@@ -138,15 +134,14 @@ class ProtoKeks(QWidget):
         self.params[title].setEnabled(enabled)
         self.params[title].setMaximumWidth(int(max_width))
         self.params[title].setAlignment(PyQt5.QtCore.Qt.AlignRight)
-        self.layouts[parent].addRow(title, self.params[title])
+        self._insert_widget(title, parent)
         if enabled and func is not None:
             self.params[title].editingFinished.connect(lambda: func(self.params[title].text()))
 
     def add_label(self, title, parent=None):
-        assert parent in self.layouts, f"Parent container name not found: {parent}"
         assert title not in self.params, f"Widget name already exists: {title}"
         self.params[title] = QLabel(title)
-        self.layouts[parent].addRow(self.params[title])
+        self._insert_widget(title, parent)
 
     def add_button(self, title, parent=None, func=None):
         """Add a button to a parent container widget (groupbox or tab).
@@ -162,11 +157,7 @@ class ProtoKeks(QWidget):
         self.params[title] = QPushButton(title)
         if func is not None:
             self.params[title].clicked.connect(func)
-        if parent is None:
-            self.layout_window.addWidget(self.params[title])
-        else:
-            assert parent in self.layouts, f"Parent container name not found: {parent}"
-            self.layouts[parent].addRow(self.params[title])
+        self._insert_widget(title, parent)
 
     def add_checkbox(self, title, parent=None, value=False, enabled=True, func=None):
         """Add a checkbox to a parent container widget (groupbox or tab).
@@ -187,7 +178,7 @@ class ProtoKeks(QWidget):
         self.params[title].setEnabled(enabled)
         if enabled and func is not None:
             self.params[title].stateChanged.connect(lambda: func(self.params[title].isChecked()))
-        self.layouts[parent].addRow(self.params[title])
+        self._insert_widget(title, parent)
 
     def add_combobox(self, title, parent=None, items=['Item1', 'Item2'], value='Item1', enabled=True, func=None):
         """Add a combobox to a parent container widget.
@@ -211,7 +202,7 @@ class ProtoKeks(QWidget):
         self.params[title].setCurrentText(value)
         if enabled and func is not None:
             self.params[title].currentTextChanged.connect(lambda: func(self.params[title].currentText()))
-        self.layouts[parent].addRow(title, self.params[title])
+        self._insert_widget(title, parent)
 
     def update_param(self, title, value):
         """"Update parameter value, for numeric or string parameter."""
