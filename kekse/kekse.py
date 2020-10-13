@@ -70,7 +70,7 @@ class ProtoKeks(QWidget):
             assert title not in self.params, "Widget name already exists: {title}"
             self.layouts[parent].addWidget(new_widget)
 
-    def add_numeric_field(self, title, parent,
+    def add_numeric_field(self, title, parent=None,
                           value=0, vrange=[-1e6, 1e6, 1],
                           enabled=True, max_width=100,
                           func=None, **func_args):
@@ -92,8 +92,7 @@ class ProtoKeks(QWidget):
                 Function's additional key-value parameters (dictionary), besides the field value.
             :return: None
         """
-        assert parent in self.layouts, f"Parent container name not found: {parent}"
-        assert title not in self.params, f"Widget name already exists: {title}"
+        assert title not in self.params, "Widget name already exists: {title}"
         assert len(vrange) == 3, "The vrange parameter must be a list of 3 scalars: [min, max, step]."
         assert vrange[0] <= value <= vrange[1], "Value lies outside of (min,max) range."
         self.params[title] = QDoubleSpinBox()
@@ -107,12 +106,17 @@ class ProtoKeks(QWidget):
         self.params[title].setEnabled(enabled)
         self.params[title].setMaximumWidth(int(max_width))
         self.params[title].setAlignment(PyQt5.QtCore.Qt.AlignRight)
-        self.layouts[parent].addRow(title, self.params[title])
+        if parent is None:
+            self.layout_window.addRow(title, self.params[title])
+        else:
+            assert parent in self.layouts, f"Parent container name not found: {parent}"
+            self.layouts[parent].addRow(title, self.params[title])
+
         if enabled and func is not None:
             self.params[title].editingFinished.connect(lambda: func(self.params[title].value(), **func_args))
             # editingFinished() preferred over valueChanged() because the latter is too jumpy, doesn't let finish input.
 
-    def add_string_field(self, title, parent, value='', enabled=True, func=None, max_width=100):
+    def add_string_field(self, title, parent=None, value='', enabled=True, func=None, max_width=100):
         """ Add a QLineEdit() widget to the parent container widget (groupbox or tab).
         :param title: str
                 Label of the parameter. Also, serves as system name of the widget. Beware of typos!
@@ -138,13 +142,13 @@ class ProtoKeks(QWidget):
         if enabled and func is not None:
             self.params[title].editingFinished.connect(lambda: func(self.params[title].text()))
 
-    def add_label(self, title, parent):
+    def add_label(self, title, parent=None):
         assert parent in self.layouts, f"Parent container name not found: {parent}"
         assert title not in self.params, f"Widget name already exists: {title}"
         self.params[title] = QLabel(title)
         self.layouts[parent].addRow(self.params[title])
 
-    def add_button(self, title, parent, func):
+    def add_button(self, title, parent=None, func=None):
         """Add a button to a parent container widget (groupbox or tab).
             Parameters
             :param title: str
@@ -154,13 +158,17 @@ class ProtoKeks(QWidget):
             :param: func: function reference
                 Name of the function that is executed on button click.
         """
-        assert parent in self.layouts, "Parent container name not found: " + parent + "\n"
-        assert title not in self.params, "Button name already exists: " + title + "\n"
+        assert title not in self.params, "Widget name already exists: {title}"
         self.params[title] = QPushButton(title)
-        self.params[title].clicked.connect(func)
-        self.layouts[parent].addRow(self.params[title])
+        if func is not None:
+            self.params[title].clicked.connect(func)
+        if parent is None:
+            self.layout_window.addWidget(self.params[title])
+        else:
+            assert parent in self.layouts, f"Parent container name not found: {parent}"
+            self.layouts[parent].addRow(self.params[title])
 
-    def add_checkbox(self, title, parent, value=False, enabled=True, func=None):
+    def add_checkbox(self, title, parent=None, value=False, enabled=True, func=None):
         """Add a checkbox to a parent container widget (groupbox or tab).
             Parameters
             :param title: str
@@ -181,7 +189,7 @@ class ProtoKeks(QWidget):
             self.params[title].stateChanged.connect(lambda: func(self.params[title].isChecked()))
         self.layouts[parent].addRow(self.params[title])
 
-    def add_combobox(self, title, parent, items=['Item1', 'Item2'], value='Item1', enabled=True, func=None):
+    def add_combobox(self, title, parent=None, items=['Item1', 'Item2'], value='Item1', enabled=True, func=None):
         """Add a combobox to a parent container widget.
             Parameters
             :param title: str
