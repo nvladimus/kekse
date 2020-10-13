@@ -32,16 +32,18 @@ Launch the demo program with some devices implemented
 ```
 python gui_demo.py
 ```
-Explore the code and make your own kekse.
+Explore the code and make your own keks.
 
 
 ## Making your own keks
 Kekse allows simplified GUI generation via thin abstraction class `ProtoKeks()` that hides the details of PyQt5 API. 
 
-To create your own keks, a good starting point is looking into the template code in [/devices/device_template.py](device_template.py). The basic steps are:
+To create your own keks, a good starting point is looking into the template code in 
+[device_template.py](./devices/device_template.py). The basic steps are:
 - Create a class that contains device functionality (communication, etc): `class Device(QtCore.QObject):`
-- Create the main GUI widget: `self.gui = kekse.ProtoKeks()`
-- Populate the main widget with containers (tabs, groupboxes) and controls (numeric fields, string fields, buttons, labels)
+- Inside it, create the main GUI window: `self.gui = kekse.ProtoKeks()`
+- Populate the main window with containers (tabs, groupboxes) 
+and controls (numeric fields, string fields, buttons, labels), for example:
 ```
 self.gui.add_tabs('Tabs', tabs=['Tab 0', 'Tab 1'])
 self.gui.add_button('Initialize', parent='Tab 0', func=self.initialize) 
