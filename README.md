@@ -15,22 +15,12 @@ similar to LabView virtual instruments.
     - no assumptions about device functionality, it is entirely upon the developer.
 
 ### Installation
-(Windows)
-
-Optional: create a local environment to keep newly installed libraries contained:
 ```
-C:\Users\user\kekse> python -m venv venv
-C:\Users\user\kekse> venv\Scripts\activate
-(venv) C:\Users\user\kekse>
+pip install kekse
 ```
-Install required libraries 
+Clone/download the repository and launch the demo program that shows devices implemented
 ```
-pip install --upgrade pip
-pip install -r requirements.txt
-```
-Launch the demo program with some devices implemented
-```
-python gui_demo.py
+C:\Users\user\kekse> python gui_demo.py
 ```
 Explore the code and make your own keks.
 
@@ -72,11 +62,11 @@ dev = devices.device_template.Device()
 dev.gui.show()
 dev.do_something()
 ```
-For a quick test of device functions, call your keks from the command line:
-```
-python -m devices.device_template
-```
 Here, `devices` is a subfolder organized as package for better code structure. 
+For a quick test of device functions, call a keks from the command line:
+```
+C:\Users\user\kekse> python ./devices/device_template.py
+```
 You can take individual module files out and reuse them, they are independent from each other.
 
 ## Current limitations
