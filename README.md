@@ -37,22 +37,20 @@ and controls (numeric fields, string fields, buttons, labels), for example:
 ```
 self.gui.add_tabs('Tabs', tabs=['Tab 0', 'Tab 1'])
 self.gui.add_button('Initialize', parent='Tab 0', func=self.initialize) 
-self.gui.add_string_field('Status', parent='Tab 0', value=self._status, enabled=False)
-self.gui.add_groupbox('Groupbox 0', parent='Tab 0')
-self.gui.add_label('This is just a label', parent='Groupbox 0')
+...
 self.gui.add_numeric_field('Parameter 0', parent='Groupbox 0',
                            value=1.0, # Initial value
                            vrange=[0, 100, 0.1], # [min, max, step]
                            func=self.do_something)
 ```
 In the code above, `add_button('Initialize', 'Tab 0', func=self.initialize)` creates 
-a button *titled* `'Initialize'`, which belongs to parent widget `'Tab 0'`, and every time the button is 
+a button *titled* `'Initialize'`, which belongs to parent widget `'Tab 0'`. Each time the button is 
 clicked, function `self.initialize()` is executed.
 
-For the parameter titled `'Parameter 0'`, function `self.do_something(x)` is 
-called every time the parameter is changed by the user, argument `x` is the new parameter value.
+The numeric field `'Parameter 0'` has function `self.do_something(x)` called every time the parameter 
+is changed by the user, argument `x` is the new parameter value.
 
-Each new widget is added as a new row in the main window (`parent=None`), or in the `parent` container.
+Each new widget is added as a row in the main window (if `parent=None`), or in the parent container (e.g. `parent='Tab 0'`).
 
 ![Device template GUI](./images/dev_template.png)
 
