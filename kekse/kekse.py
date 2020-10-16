@@ -75,7 +75,7 @@ class ProtoKeks(QWidget):
         self._insert_widget(title, parent, container=True)
 
     def add_numeric_field(self, title, parent=None,
-                          value=0, vrange=[-1e6, 1e6, 1],
+                          value=0, vrange=(-1e6, 1e6, 1),
                           enabled=True, max_width=100,
                           func=None, **func_args):
         """Add a QDoubleSpinBox() widget to the parent container widget.
@@ -86,14 +86,17 @@ class ProtoKeks(QWidget):
                 Name of the parent container
             :param value: float
                 Initial value.
-            :param: vrange: list of 3 scalars
-                List of [minimum, maximum, step] values, e.g. [0, 100, 1]. Default [-1e6, 1e6, 1].
+            :param: vrange: tuple of 3 scalars
+                Tuple of (minimum, maximum, step) values, e.g. (0, 100, 1). Default (-1e6, 1e6, 1).
             :param enabled: Boolean
                 If True, the value can be edited. If False, it is grayed out.
+            :param max_width: int
+                Width of the field (px).
             :param func: function reference
                 Name of the function which must be called every time the value is changed.
+                The value of the field is passed to the function.
             :param: **func_args:
-                Function's additional key-value parameters (dictionary), besides the field value.
+                Function's additional key-value parameters (dictionary), besides the field value. Deprecated!
             :return: None
         """
         assert title not in self.params, "Widget name already exists: {title}"
@@ -127,8 +130,9 @@ class ProtoKeks(QWidget):
             If True, user can edit value.
         :param func: function reference
                 Name of the function which must be called every time the value is changed.
-        :param nchars: int
-            min number of characters to display
+                The field's string value is passed to the function.
+        :param max_width: int
+            width of the field (px)
         :return: None
         """
         assert parent in self.layouts, f"Parent container name not found: {parent}"
