@@ -1,5 +1,5 @@
 nidaqmx==0.5.7
-numpy==1.19.2
+numpy==1.22.0
 PyDAQmx==1.4.3
 PyQt5==5.15.1
 pyserial==3.4
